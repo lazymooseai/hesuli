@@ -215,15 +215,21 @@ export async function fetchLiveTrains(station: TrainStation = "HKI"): Promise<Tr
     );
     if (!arrival) continue;
 
-    // VAIN saapuvat seuraavan tunnin sisalla:
-    // - ohita jos saapuminen on jo mennyt (yli 2 min sitten)
-    // - ohita jos saapuminen on yli 60 min paassa
+    // Saapumisikkuna:
+    // - paivalla (06-22) seuraavan 60 min sisalla
+    // - yolla (22-06) laajennetaan 180 min jotta lista ei ole tyhja
+    //   ja kuski nakee ensimmaiset aamun junat
     const arrivalEpoch = new Date(
       arrival.liveEstimateTime ?? arrival.actualTime ?? arrival.scheduledTime
     ).getTime();
     const now = Date.now();
+    const hkiHour = Number(
+      new Date().toLocaleString("en-US", { timeZone: "Europe/Helsinki", hour: "2-digit", hour12: false })
+    );
+    const isNight = hkiHour >= 22 || hkiHour < 6;
+    const windowMs = (isNight ? 180 : 60) * 60 * 1000;
     if (arrivalEpoch < now - 2 * 60 * 1000) continue;
-    if (arrivalEpoch > now + 60 * 60 * 1000) continue;
+    if (arrivalEpoch > now + windowMs) continue;
 
     // Laske viive: kayta liveEstimate > actualTime > scheduled
     const scheduled = new Date(arrival.scheduledTime);
