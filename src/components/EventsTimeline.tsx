@@ -246,9 +246,12 @@ interface EventsTimelineProps {
 
 const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
   const { state, upcomingEvents, trainStation, politicalEvents } = useDashboard();
+  const { lat: userLat, lon: userLon, source: locSource } = useGeolocation();
 
   // Aikaikkuna: 2h oletus, 4h laajennettu
   const [windowH, setWindowH] = useState<2 | 4>(2);
+  // Lähellä-suodatin: kun päällä, näytetään vain ≤ 5 km säteellä autosta
+  const [nearOnly, setNearOnly] = useState(false);
   // Aktiivinen tabi-indeksi (swipe vaihtaa)
   const [tabIdx, setTabIdx] = useState(0);
   // Per-tab "nayta kaikki" -laajennus (id = "<cat>:expanded")
@@ -273,7 +276,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     upcomingEvents.forEach((e) => items.push(eventToTimelineItem(e)));
     state.sportsEvents.forEach((s) => items.push(sportsToTimelineItem(s)));
     politicalEvents.forEach((p) => items.push(politicalToTimelineItem(p)));
-    return items;
+    return withTolppaDistances(items, userLat, userLon);
   }, [
     state.flights,
     state.trainDelays,
@@ -283,6 +286,8 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     upcomingEvents,
     politicalEvents,
     stationName,
+    userLat,
+    userLon,
   ]);
 
   // Suodata aika-ikkunan mukaan + ryhmita kategorioihin
@@ -295,7 +300,12 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     const upcoming: Record<EventCategory, TimelineItem[]> = {
       asemat: [], kulttuuri: [], urheilu: [], politiikka: [], muut: [],
     };
-    for (const item of allItems) {
+    const filtered = nearOnly
+      ? allItems.filter(
+          (i) => i.tolppaKmFromUser == null || i.tolppaKmFromUser <= 5,
+        )
+      : allItems;
+    for (const item of filtered) {
       if (isItemToday(item)) {
         if (inWindow(item, maxMin)) {
           today[item.category].push(item);
@@ -309,6 +319,17 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
       }
     }
     const sortByWeight = (a: TimelineItem, b: TimelineItem) => {
+      // Lähellä-priorisointi: jos käyttäjä on antanut GPS:n, lähemmät nousevat
+      if (a.tolppaKmFromUser != null && b.tolppaKmFromUser != null) {
+        // Boostaa max +30 painopisteeseen jos < 2 km
+        const aBoost = Math.max(0, 30 - a.tolppaKmFromUser * 5);
+        const bBoost = Math.max(0, 30 - b.tolppaKmFromUser * 5);
+        const aw = a.weight + aBoost;
+        const bw = b.weight + bBoost;
+        if (bw !== aw) return bw - aw;
+      } else if (b.weight !== a.weight) {
+        return b.weight - a.weight;
+      }
       if (b.weight !== a.weight) return b.weight - a.weight;
       return a.startMs - b.startMs;
     };
@@ -320,7 +341,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
       counts[cat] = today[cat].length + upcoming[cat].length;
     }
     return { todayGrouped: today, upcomingGrouped: upcoming, totalCounts: counts };
-  }, [allItems, windowH]);
+  }, [allItems, windowH, nearOnly]);
 
   const activeCategory = CATEGORY_ORDER[tabIdx];
   const todayItems = todayGrouped[activeCategory];
@@ -359,6 +380,23 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
           </span>
         </h2>
         <div className="flex items-center gap-2">
+          {userLat != null && userLon != null && (
+            <button
+              onClick={() => setNearOnly((v) => !v)}
+              className={`h-10 px-3 rounded-lg border flex items-center gap-1 text-xs font-black uppercase tracking-wider active:scale-95 ${
+                nearOnly
+                  ? "bg-primary/15 border-primary/40 text-primary"
+                  : "bg-muted border-border text-muted-foreground"
+              }`}
+              title={
+                locSource === "gps"
+                  ? "Näytä vain 5 km säteellä autosta"
+                  : "Näytä vain valitun vyöhykkeen läheisyydessä"
+              }
+            >
+              <MapPin className="h-4 w-4" /> 5km
+            </button>
+          )}
           <button
             onClick={() => setWindowH(windowH === 2 ? 4 : 2)}
             className="h-10 px-3 rounded-lg bg-muted border border-border flex items-center gap-1 text-xs font-black uppercase tracking-wider text-muted-foreground active:scale-95"
