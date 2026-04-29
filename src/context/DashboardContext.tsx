@@ -29,6 +29,7 @@ import { fetchHarborPaxEstimates, averioShipsToArrivals } from "@/lib/harbors";
 import { fetchEventsBundle } from "@/lib/events";
 import { fetchFlightArrivals } from "@/lib/flights";
 import { fetchSportsEvents } from "@/lib/sports";
+import { fetchPoliticalEvents, type PoliticalEvent } from "@/lib/politicalEvents";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -72,6 +73,7 @@ export const FLIGHT_REFRESH_MS = 2 * 60 * 1000;  // 2 min — Finavia, lentodata
 export const WEATHER_REFRESH_MS = 2 * 60 * 1000; // 2 min — Open-Meteo päivittyy 15 min, mutta poll usein
 export const OTHERS_REFRESH_MS = 5 * 60 * 1000;  // 5 min — laivat, tapahtumat
 export const SPORTS_REFRESH_MS = 15 * 60 * 1000; // 15 min — urheilu päivittyy harvoin
+export const POLITICAL_REFRESH_MS = 10 * 60 * 1000; // 10 min — DB-tabletti, edge-funktio paivittaa tunneittain
 
 export interface SourceTimestamps {
   trains: Date | null;
@@ -80,6 +82,7 @@ export interface SourceTimestamps {
   events: Date | null;
   flights: Date | null;
   sportsEvents: Date | null;
+  political: Date | null;
 }
 
 interface DashboardContextValue {
@@ -91,6 +94,7 @@ interface DashboardContextValue {
   lastFetch: Date | null;
   sourceTimestamps: SourceTimestamps;
   upcomingEvents: import("@/lib/types").EventInfo[];
+  politicalEvents: PoliticalEvent[];
   refreshAll: () => Promise<void>;
   refreshTrains: () => Promise<void>;
   simulateShipArrival: () => void;
@@ -114,6 +118,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<import("@/lib/types").EventInfo[]>([]);
+  const [politicalEvents, setPoliticalEvents] = useState<PoliticalEvent[]>([]);
   const [sourceTimestamps, setSourceTimestamps] = useState<SourceTimestamps>({
     trains: null,
     ships: null,
@@ -121,6 +126,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     events: null,
     flights: null,
     sportsEvents: null,
+    political: null,
   });
 
   // Crowd overrides — sessiomuisti (tyhjenee kun selain suljetaan)
@@ -256,6 +262,23 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Poliittisten tapahtumien haku DB:sta (10 min sykli)
+  const politicalAbortRef = useRef<AbortController | null>(null);
+  const refreshPolitical = useCallback(async () => {
+    if (politicalAbortRef.current) politicalAbortRef.current.abort();
+    const controller = new AbortController();
+    politicalAbortRef.current = controller;
+    try {
+      const events = await fetchPoliticalEvents();
+      if (controller.signal.aborted) return;
+      setPoliticalEvents(events);
+      setSourceTimestamps((prev) => ({ ...prev, political: new Date() }));
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      console.warn("refreshPolitical epaonnistui:", err);
+    }
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Paahaku — kaikki lähteet (5 min sykli, mukaan lukien junat)
   // ---------------------------------------------------------------------------
@@ -341,11 +364,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     refreshAll();
     refreshFlights();
     refreshSports();
+    refreshPolitical();
     const allInterval = setInterval(refreshAll, OTHERS_REFRESH_MS);
     const trainInterval = setInterval(refreshTrains, TRAIN_REFRESH_MS);
     const flightInterval = setInterval(refreshFlights, FLIGHT_REFRESH_MS);
     const weatherInterval = setInterval(refreshWeather, WEATHER_REFRESH_MS);
     const sportsInterval = setInterval(refreshSports, SPORTS_REFRESH_MS);
+    const politicalInterval = setInterval(refreshPolitical, POLITICAL_REFRESH_MS);
 
     return () => {
       clearInterval(allInterval);
@@ -353,8 +378,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       clearInterval(flightInterval);
       clearInterval(weatherInterval);
       clearInterval(sportsInterval);
+      clearInterval(politicalInterval);
     };
-  }, [refreshAll, refreshTrains, refreshFlights, refreshWeather, refreshSports]);
+  }, [refreshAll, refreshTrains, refreshFlights, refreshWeather, refreshSports, refreshPolitical]);
 
   // Realtime: kun events-taulu paivittyy (skrapaus tai manuaalinen lisays), refetch
   useEffect(() => {
@@ -368,6 +394,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       })
       .subscribe();
     return () => { supabase.removeChannel(eventsChannel); };
+  }, []);
+
+  // Realtime: poliittiset tapahtumat
+  useEffect(() => {
+    const ch = supabase
+      .channel("political-events-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "political_events" }, () => {
+        fetchPoliticalEvents().then(setPoliticalEvents).catch(() => {});
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -423,6 +460,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         lastFetch,
         sourceTimestamps,
         upcomingEvents,
+        politicalEvents,
         refreshAll,
         refreshTrains,
         simulateShipArrival,
@@ -455,8 +493,9 @@ export function useDashboard() {
         hasJackpot: false,
         isLoading: false,
         lastFetch: null,
-        sourceTimestamps: { trains: null, ships: null, weather: null, events: null, flights: null, sportsEvents: null },
+        sourceTimestamps: { trains: null, ships: null, weather: null, events: null, flights: null, sportsEvents: null, political: null },
         upcomingEvents: [],
+        politicalEvents: [],
         refreshAll: async () => {},
         refreshTrains: async () => {},
         simulateShipArrival: () => {},

@@ -137,6 +137,75 @@ export type Database = {
         }
         Relationships: []
       }
+      political_events: {
+        Row: {
+          actual_end_time: string | null
+          category: string
+          confidence: number | null
+          created_at: string
+          description: string | null
+          end_error_min: number | null
+          end_time: string | null
+          evaluated_at: string | null
+          external_key: string | null
+          fetched_at: string
+          id: string
+          location: string | null
+          predicted_end_time: string | null
+          reasoning: string | null
+          source: string
+          source_url: string | null
+          start_time: string
+          title: string
+          updated_at: string
+          vip_level: string | null
+        }
+        Insert: {
+          actual_end_time?: string | null
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          end_error_min?: number | null
+          end_time?: string | null
+          evaluated_at?: string | null
+          external_key?: string | null
+          fetched_at?: string
+          id?: string
+          location?: string | null
+          predicted_end_time?: string | null
+          reasoning?: string | null
+          source?: string
+          source_url?: string | null
+          start_time: string
+          title: string
+          updated_at?: string
+          vip_level?: string | null
+        }
+        Update: {
+          actual_end_time?: string | null
+          category?: string
+          confidence?: number | null
+          created_at?: string
+          description?: string | null
+          end_error_min?: number | null
+          end_time?: string | null
+          evaluated_at?: string | null
+          external_key?: string | null
+          fetched_at?: string
+          id?: string
+          location?: string | null
+          predicted_end_time?: string | null
+          reasoning?: string | null
+          source?: string
+          source_url?: string | null
+          start_time?: string
+          title?: string
+          updated_at?: string
+          vip_level?: string | null
+        }
+        Relationships: []
+      }
       pre_bookings: {
         Row: {
           created_at: string
