@@ -216,3 +216,157 @@ export const ZONE_CENTERS: Record<Zone, { lat: number; lon: number }> = {
   "Vantaa": { lat: 60.2925, lon: 25.0440 },
   "Lentoasema": { lat: 60.3172, lon: 24.9633 },
 };
+
+// ---------------------------------------------------------------------------
+// Venue -> tolppa -mappi (erikoistapaukset, joissa lähin tolppa ei ole sama
+// kuin geometrian lähin). Esim. Savoy palvelee Erottaja+Kämp -yhdistettyä,
+// vaikka geometrisesti Senaatintori voisi olla yhtä lähellä.
+// Avaimet normalisoidaan (lowercase, ilman ääkkösiä).
+// ---------------------------------------------------------------------------
+
+const VENUE_TOLPPA_OVERRIDES: Record<string, string> = {
+  // Politiikka / valtio
+  "saatytalo": "Aleksanterinkatu",
+  "säätytalo": "Aleksanterinkatu",
+  "valtioneuvoston linna": "Aleksanterinkatu",
+  "smolna": "Aleksanterinkatu",
+  "presidentinlinna": "Kauppatori",
+  // Kulttuuri
+  "kansallisooppera": "Ooppera",
+  "ooppera": "Ooppera",
+  "oopperatalo": "Ooppera",
+  "musiikkitalo": "Musiikkitalo",
+  "finlandia-talo": "Finlandia-talo",
+  "finlandiatalo": "Finlandia-talo",
+  "savoy-teatteri": "Erottaja",
+  "savoy": "Erottaja",
+  "kansallisteatteri": "Rautatientori",
+  "aleksanterin teatteri": "Erottaja",
+  "kaupunginteatteri": "Hakaniemi",
+  "helsingin kaupunginteatteri": "Hakaniemi",
+  "tanssin talo": "Länsiterminaali",
+  "kulttuuritalo": "Sörnäinen",
+  "tavastia": "Kamppi",
+  "g livelab": "Kämp",
+  "kaisaniemen puisto": "Kaisaniemi",
+  // Klubit / business
+  "suomalainen klubi": "Kasarmikatu",
+  "helsingin suomalainen klubi": "Kasarmikatu",
+  "klubi": "Kasarmikatu",
+  // Hotellit
+  "hotel kämp": "Kämp",
+  "kamp": "Kämp",
+  "hotel st. george": "Erottaja",
+  // Areenat
+  "helsinki halli": "Helsinki Halli",
+  "hartwall arena": "Hartwall Arena",
+  "veikkaus arena": "Helsinki Halli",
+  "olympiastadion": "Töölöntori",
+  "bolt arena": "Töölöntori",
+  "helsingin olympiastadion": "Töölöntori",
+  // Messut
+  "messukeskus": "Pasila",
+  "messukeskus helsinki": "Pasila",
+  // Eduskunta
+  "eduskuntatalo": "Musiikkitalo",
+  "eduskunta": "Musiikkitalo",
+  // Suurlähetystöt-keskusta
+  "presidentin kanslia": "Kauppatori",
+};
+
+/**
+ * Tunnetut venuet koordinaatteineen geo-fallbackia varten.
+ * Käytetään kun overridesta ei löydy match-iä → otetaan venuen lat/lon ja
+ * etsitään lähin tolppa.
+ */
+export const VENUE_GEO: Record<string, { lat: number; lon: number }> = {
+  "saatytalo": { lat: 60.1715, lon: 24.9527 },
+  "säätytalo": { lat: 60.1715, lon: 24.9527 },
+  "smolna": { lat: 60.1675, lon: 24.9498 },
+  "valtioneuvoston linna": { lat: 60.1693, lon: 24.9514 },
+  "presidentinlinna": { lat: 60.1685, lon: 24.9531 },
+  "eduskuntatalo": { lat: 60.1722, lon: 24.9335 },
+  "kansallisooppera": { lat: 60.1827, lon: 24.9270 },
+  "musiikkitalo": { lat: 60.1758, lon: 24.9355 },
+  "finlandia-talo": { lat: 60.1760, lon: 24.9389 },
+  "savoy-teatteri": { lat: 60.1668, lon: 24.9479 },
+  "savoy": { lat: 60.1668, lon: 24.9479 },
+  "kansallisteatteri": { lat: 60.1719, lon: 24.9430 },
+  "kaupunginteatteri": { lat: 60.1846, lon: 24.9532 },
+  "tanssin talo": { lat: 60.1604, lon: 24.9211 },
+  "kulttuuritalo": { lat: 60.1880, lon: 24.9489 },
+  "tavastia": { lat: 60.1690, lon: 24.9295 },
+  "suomalainen klubi": { lat: 60.1672, lon: 24.9498 },
+  "helsingin suomalainen klubi": { lat: 60.1672, lon: 24.9498 },
+  "hotel kamp": { lat: 60.1683, lon: 24.9450 },
+  "hotel kämp": { lat: 60.1683, lon: 24.9450 },
+  "messukeskus": { lat: 60.2014, lon: 24.9376 },
+  "olympiastadion": { lat: 60.1869, lon: 24.9263 },
+  "bolt arena": { lat: 60.1864, lon: 24.9305 },
+  "helsinki halli": { lat: 60.2061, lon: 24.9293 },
+};
+
+/** Etsi lähin tolppa annetuista koordinaateista. */
+export function findNearestTolppa(
+  lat: number,
+  lon: number,
+): { tolppa: TolppaLocation; km: number } | undefined {
+  let best: { tolppa: TolppaLocation; km: number } | undefined;
+  for (const t of TOLPAT) {
+    const d = distanceKm(lat, lon, t.lat, t.lon);
+    if (!best || d < best.km) best = { tolppa: t, km: d };
+  }
+  return best;
+}
+
+/**
+ * Päättelee venue-nimen perusteella tarkimman tolpan.
+ * Logiikka:
+ *   1. Override-mappi (esim. Säätytalo → Aleksanterinkatu)
+ *   2. Venue-koordinaatit (VENUE_GEO) → lähin tolppa
+ *   3. Token-pohjainen findTolppaSmart (etsii tolppanimeä venuesta)
+ *   4. undefined
+ */
+export function findTolppaForVenue(
+  venue: string,
+): { tolppa: TolppaLocation; matchType: "override" | "geo" | "token"; km?: number } | undefined {
+  if (!venue) return undefined;
+  const n = normalize(venue);
+
+  // 1. Override
+  for (const key of Object.keys(VENUE_TOLPPA_OVERRIDES)) {
+    const nk = normalize(key);
+    if (n === nk || n.includes(nk) || nk.includes(n)) {
+      const targetName = VENUE_TOLPPA_OVERRIDES[key];
+      const t = TOLPAT.find((x) => x.name === targetName);
+      if (t) return { tolppa: t, matchType: "override" };
+    }
+  }
+
+  // 2. Geo via tunnettu venue
+  for (const key of Object.keys(VENUE_GEO)) {
+    const nk = normalize(key);
+    if (n === nk || n.includes(nk) || nk.includes(n)) {
+      const c = VENUE_GEO[key];
+      const near = findNearestTolppa(c.lat, c.lon);
+      if (near) return { tolppa: near.tolppa, matchType: "geo", km: near.km };
+    }
+  }
+
+  // 3. Token-pohjainen tolppa-haku (esim. "Stockmannin Stockmann-baari")
+  const direct = findTolppaSmart(venue);
+  if (direct) return { tolppa: direct, matchType: "token" };
+
+  return undefined;
+}
+
+/** Muotoilee tolpan näyttöä varten. "Tolppa 6 — Aleksanterinkatu" tai "Erottaja". */
+export function formatTolppaLabel(t: TolppaLocation): string {
+  if (t.number != null && t.number2 != null) {
+    return `Tolppa ${t.number}/${t.number2} — ${t.name}`;
+  }
+  if (t.number != null) {
+    return `Tolppa ${t.number} — ${t.name}`;
+  }
+  return t.name;
+}
