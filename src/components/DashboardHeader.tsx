@@ -3,6 +3,9 @@ import { CloudRain, Snowflake, Sun, Wind, Droplets, ExternalLink } from "lucide-
 import { useDashboard } from "@/context/DashboardContext";
 import ControlRoomDrawer from "@/components/ControlRoomDrawer";
 import { openExternal } from "@/lib/openExternal";
+import HelpDrawer from "@/components/HelpDrawer";
+import RefreshButton from "@/components/RefreshButton";
+import ErrorLogDrawer from "@/components/ErrorLogDrawer";
 
 const WEATHER_DEEP_LINK = "https://www.ilmatieteenlaitos.fi/sadealueet-suomessa";
 
@@ -38,10 +41,13 @@ const DashboardHeader = () => {
           <span className="text-muted-foreground text-3xl ml-1">{seconds}</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <HelpDrawer />
+          <RefreshButton />
+          <ErrorLogDrawer />
           <ControlRoomDrawer />
           <div
-            className="flex items-center gap-2 rounded-lg bg-card px-3 py-2 cursor-pointer active:scale-[0.97] transition-all"
+            className="flex items-center gap-2 rounded-lg bg-card px-2.5 py-2 cursor-pointer active:scale-[0.97] transition-all"
             onClick={() => openExternal(WEATHER_DEEP_LINK)}
           >
             <WeatherIcon className={`h-7 w-7 ${weather.condition === "Clear" ? "text-primary" : "text-accent"}`} />

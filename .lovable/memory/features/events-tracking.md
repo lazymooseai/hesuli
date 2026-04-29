@@ -10,7 +10,17 @@ type: feature
 2. **LinkedEvents API** (`api.hel.fi/linkedevents/v1`) — julkinen, ei vaadi avainta. Hakee yso-keywordeilla:
    - `p360` kulttuuritapahtumat, `p1808` konsertit, `p13084` teatteri,
    - `p11185` ooppera, `p20421` festivaalit
-3. **scrape-events** edge function — valinnainen Firecrawl-pohjainen rikastus (vaatii `FIRECRAWL_API_KEY`). Voi olla pois kaytosta jos cronia ei ole asetettu.
+3. **scrape-klubi** edge function — Helsingin Suomalaisen Klubin tapahtumat
+   suoraan `tapahtumat.klubi.fi`-staattisesta HTML:sta (ei vaadi APIa).
+   Tunnistaa "TÄYNNÄ"/loppuunmyynti-tilan summary-tekstista.
+4. **scrape-events** edge function — valinnainen Firecrawl-pohjainen rikastus (vaatii `FIRECRAWL_API_KEY`). Voi olla pois kaytosta jos cronia ei ole asetettu.
+
+## Audience profiling
+
+`src/lib/audienceProfile.ts` arvioi venuen+nimen+ajan perusteella tapahtuman
+kohdeyleison: senior / adult / business / young_adult / youth / family / mixed.
+Affinity 0..100 lisataan TimelineItemin weightiin (max +50). Tagit:
+- BUSINESS, TAKSIYLEISÖ, TAKSIBOOST, POTENTIAALI näytetään korteissa.
 
 ## Toteutus
 

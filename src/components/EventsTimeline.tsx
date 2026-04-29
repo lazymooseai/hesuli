@@ -143,8 +143,8 @@ const TimelineCard = ({ item, onClick }: TimelineCardProps) => {
         {ITEM_ICON[item.raw.kind]}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-black text-base text-foreground truncate">{item.title}</p>
-        <p className="text-sm text-muted-foreground font-semibold truncate mt-0.5">
+        <p className="font-black text-lg text-foreground truncate leading-tight">{item.title}</p>
+        <p className="text-sm text-muted-foreground font-semibold truncate mt-1">
           {item.subtitle}
         </p>
         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -153,10 +153,24 @@ const TimelineCard = ({ item, onClick }: TimelineCardProps) => {
               {dateBadge}
             </span>
           )}
+          {item.audienceTag && (
+            <span
+              className={`inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                item.audienceTag === "BUSINESS"
+                  ? "bg-primary/20 text-primary"
+                  : item.audienceTag === "TAKSIYLEISÖ"
+                  ? "bg-destructive/20 text-destructive"
+                  : "bg-accent/20 text-accent"
+              }`}
+              title={`Kohdeyleisö ${item.audienceAge ?? ""}`}
+            >
+              {item.audienceTag}
+            </span>
+          )}
           {item.tag && (
             <span
               className={`inline-block text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
-                item.tag.includes("LOPPUUNMYYTY") || item.tag.includes("KORKEA")
+                item.tag.includes("LOPPUUNMYYTY") || item.tag.includes("KORKEA") || item.tag.includes("TÄYNNÄ")
                   ? "bg-destructive/20 text-destructive"
                   : item.tag.includes("PREMIUM")
                   ? "bg-accent/20 text-accent"
@@ -186,7 +200,7 @@ const TimelineCard = ({ item, onClick }: TimelineCardProps) => {
       <div className="flex flex-col items-end shrink-0">
         <span
           className={`font-mono font-black ${LEVEL_TIME_COLOR[item.level]} ${
-            timeLabel.includes("–") ? "text-base leading-tight" : "text-2xl"
+            timeLabel.includes("–") ? "text-lg leading-tight" : "text-3xl"
           }`}
         >
           {timeLabel}

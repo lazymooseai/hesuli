@@ -12,6 +12,7 @@
 import { EventInfo } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchLinkedEvents } from "./linkedEvents";
+import { fetchKlubiEvents } from "./klubiEvents";
 
 // ---------------------------------------------------------------------------
 // Apufunktiot
@@ -112,8 +113,8 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
   sevenDaysOut.setDate(sevenDaysOut.getDate() + 7);
   sevenDaysOut.setHours(23, 59, 59, 999);
 
-  // Hae rinnakkain: oma DB (manuaaliset + skrapatut) + LinkedEvents (julkinen API)
-  const [dbResult, linkedEvents] = await Promise.all([
+  // Hae rinnakkain: oma DB (manuaaliset + skrapatut) + LinkedEvents + Klubi
+  const [dbResult, linkedEvents, klubiEvents] = await Promise.all([
     supabase
       .from("events")
       .select("*")
@@ -122,6 +123,10 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
       .order("start_time", { ascending: true }),
     fetchLinkedEvents().catch((e) => {
       console.warn("LinkedEvents fetch epaonnistui:", e);
+      return [] as EventInfo[];
+    }),
+    fetchKlubiEvents().catch((e) => {
+      console.warn("Klubi fetch epaonnistui:", e);
       return [] as EventInfo[];
     }),
   ]);
@@ -147,8 +152,8 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
     }
   }
 
-  // 2) LinkedEvents - lisaa duplikaattien valttamiseksi
-  for (const ev of linkedEvents) {
+  // 2) LinkedEvents + Klubi - lisaa duplikaattien valttamiseksi
+  for (const ev of [...linkedEvents, ...klubiEvents]) {
     const dayKey = (ev.startIso || "").slice(0, 10);
     const key = `${ev.name.toLowerCase()}|${dayKey}`;
     if (seenKeys.has(key)) continue;
