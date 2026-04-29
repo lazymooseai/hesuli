@@ -44,6 +44,10 @@ export interface TimelineItem {
   capacity?: number;
   /** Lipunmyyntiaste 0..100 (jos tiedossa), naytetaan kortilla */
   loadPct?: number;
+  /** Loppumisaika HH:MM (jos tiedossa) — naytetaan "alku–loppu" muodossa */
+  endTime?: string;
+  /** Ulkoinen URL johon kortin klikkaus johtaa (uusi valilehti) */
+  url?: string;
   /** Alkuperainen objekti, jotta detail-paneeli toimii */
   raw: { kind: "flight" | "train" | "ship" | "event" | "sports"; data: unknown };
 }
@@ -319,6 +323,10 @@ export function eventToTimelineItem(e: EventInfo): TimelineItem {
     tag: e.demandTag,
     capacity: e.capacity,
     loadPct,
+    endTime: e.endTime,
+    url:
+      e.infoUrl ||
+      `https://www.google.com/search?q=${encodeURIComponent(`${e.name} ${e.venue} liput`)}`,
     raw: { kind: "event", data: e },
   };
 }
@@ -340,6 +348,7 @@ export function flightToTimelineItem(f: FlightArrival): TimelineItem {
     level: f.demandLevel,
     weight,
     tag: f.demandTag,
+    url: `https://www.finavia.fi/fi/lentoasemat/helsinki-vantaa/saapuvat-lennot?flight=${encodeURIComponent(f.flightNumber)}`,
     raw: { kind: "flight", data: f },
   };
 }
@@ -361,6 +370,7 @@ export function shipToTimelineItem(s: ShipArrival): TimelineItem {
     level,
     weight,
     capacity: s.pax,
+    url: `https://www.portofhelsinki.fi/matkustajat/aikataulut`,
     raw: { kind: "ship", data: s },
   };
 }
@@ -381,6 +391,7 @@ export function trainToTimelineItem(t: TrainDelay, stationName: string): Timelin
     startMs,
     level,
     weight,
+    url: `https://junalahdot.fi/?station=HKI`,
     raw: { kind: "train", data: t },
   };
 }
@@ -404,6 +415,7 @@ export function sportsToTimelineItem(s: SportsEvent): TimelineItem {
     capacity: s.capacity,
     loadPct:
       s.capacity > 0 ? Math.round((s.expectedAttendance / s.capacity) * 100) : undefined,
+    url: `https://www.google.com/search?q=${encodeURIComponent(`${s.homeTeam} ${s.awayTeam} liput`)}`,
     raw: { kind: "sports", data: s },
   };
 }
