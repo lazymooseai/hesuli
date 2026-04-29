@@ -226,7 +226,7 @@ interface EventsTimelineProps {
 }
 
 const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
-  const { state, upcomingEvents, trainStation } = useDashboard();
+  const { state, upcomingEvents, trainStation, politicalEvents } = useDashboard();
 
   // Aikaikkuna: 2h oletus, 4h laajennettu
   const [windowH, setWindowH] = useState<2 | 4>(2);
@@ -237,6 +237,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     asemat: false,
     kulttuuri: false,
     urheilu: false,
+    politiikka: false,
     muut: false,
   });
 
@@ -252,6 +253,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     state.events.forEach((e) => items.push(eventToTimelineItem(e)));
     upcomingEvents.forEach((e) => items.push(eventToTimelineItem(e)));
     state.sportsEvents.forEach((s) => items.push(sportsToTimelineItem(s)));
+    politicalEvents.forEach((p) => items.push(politicalToTimelineItem(p)));
     return items;
   }, [
     state.flights,
@@ -260,6 +262,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     state.events,
     state.sportsEvents,
     upcomingEvents,
+    politicalEvents,
     stationName,
   ]);
 
@@ -268,10 +271,10 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
   const { todayGrouped, upcomingGrouped, totalCounts } = useMemo(() => {
     const maxMin = windowH * 60;
     const today: Record<EventCategory, TimelineItem[]> = {
-      asemat: [], kulttuuri: [], urheilu: [], muut: [],
+      asemat: [], kulttuuri: [], urheilu: [], politiikka: [], muut: [],
     };
     const upcoming: Record<EventCategory, TimelineItem[]> = {
-      asemat: [], kulttuuri: [], urheilu: [], muut: [],
+      asemat: [], kulttuuri: [], urheilu: [], politiikka: [], muut: [],
     };
     for (const item of allItems) {
       if (isItemToday(item)) {
@@ -291,7 +294,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
       return a.startMs - b.startMs;
     };
     const sortByTime = (a: TimelineItem, b: TimelineItem) => a.startMs - b.startMs;
-    const counts: Record<EventCategory, number> = { asemat: 0, kulttuuri: 0, urheilu: 0, muut: 0 };
+    const counts: Record<EventCategory, number> = { asemat: 0, kulttuuri: 0, urheilu: 0, politiikka: 0, muut: 0 };
     for (const cat of CATEGORY_ORDER) {
       today[cat].sort(sortByWeight);
       upcoming[cat].sort(sortByTime);
