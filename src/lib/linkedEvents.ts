@@ -19,7 +19,8 @@ interface LinkedLocation {
 }
 
 interface LinkedKeyword {
-  id: string;
+  id?: string;
+  "@id"?: string;
   name?: { fi?: string; en?: string };
 }
 
@@ -43,9 +44,13 @@ interface LinkedResponse {
 
 const VENUE_CAPACITY: Record<string, number> = {
   "kansallisooppera": 1350,
+  "suomen kansallisooppera": 1350,
   "ooppera": 1350,
   "musiikkitalo": 1700,
   "helsingin kaupunginteatteri": 1120,
+  "suuri näyttämö": 1120,
+  "studio pasila": 320,
+  "arena-näyttämö": 500,
   "kansallisteatteri": 880,
   "tanssin talo": 700,
   "savoy": 700,
@@ -58,8 +63,38 @@ const VENUE_CAPACITY: Record<string, number> = {
   "olympiastadion": 36000,
   "bolt arena": 10770,
   "nordis": 16000,
+  "helsingin jäähalli": 8200,
+  "urheilun ja liikunnan kulttuurikeskus": 1000,
   "kaisaniemi": 5000,
 };
+
+const TARGET_TEXT_QUERIES = [
+  "Helsingin Kaupunginteatteri",
+  "HKT",
+  "Suuri näyttämö",
+  "Suomen kansallisooppera",
+  "ooppera",
+  "Musiikkitalo",
+  "Tavastia",
+  "Kulttuuritalo",
+  "Savoy-teatteri",
+  "Tanssin talo",
+  "Bolt Arena",
+  "Olympiastadion",
+  "Helsingin Jäähalli",
+];
+
+const KEYWORD_QUERY = [
+  "yso:p360",   // kulttuuritapahtumat
+  "yso:p1808",  // konsertit
+  "yso:p13084", // teatteri
+  "yso:p11185", // ooppera
+  "yso:p2625",  // musiikki
+  "yso:p20421", // festivaalit
+  "yso:p965",   // urheilu
+  "yso:p916",   // jääkiekko
+  "yso:p6915",  // jalkapallo
+].join(",");
 
 function pickName(t?: { fi?: string; sv?: string; en?: string }): string {
   return t?.fi || t?.sv || t?.en || "";
