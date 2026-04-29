@@ -1,6 +1,5 @@
 import TripsTabs from "@/components/trips/TripsTabs";
 import TripHistoryCard from "@/components/trips/TripHistoryCard";
-import TrafficCameras from "@/components/TrafficCameras";
 import FeedbackButtons from "@/components/FeedbackButtons";
 import DevTools from "@/components/DevTools";
 
@@ -19,13 +18,6 @@ const HallintaTab = () => {
           Kyytihistoria
         </h2>
         <TripHistoryCard />
-      </section>
-
-      <section aria-label="Liikennekamerat">
-        <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 px-1">
-          Liikennekamerat
-        </h2>
-        <TrafficCameras />
       </section>
 
       <FeedbackButtons />
