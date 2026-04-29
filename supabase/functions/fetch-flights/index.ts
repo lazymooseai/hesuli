@@ -170,11 +170,13 @@ Deno.serve(async (req) => {
     const cutoff = now.getTime() + WINDOW_MS;
     const flights: FlightOut[] = [];
 
+    const RECENT_LANDED_MS = 30 * 60 * 1000; // näytä viim. 30 min laskeutuneet
     for (const f of raw) {
       const status = (f.prm ?? "").toUpperCase();
       const statusFi = (f.prt_f ?? "").toLowerCase();
-      if (status === "CXX" || status === "LAN") continue;
-      if (statusFi.includes("peruttu") || statusFi.includes("laskeutunut")) continue;
+      if (status === "CXX" || statusFi.includes("peruttu")) continue;
+
+      const isLanded = status === "LAN" || statusFi.includes("laskeutunut");
 
       // Ajat: sdt = scheduled, est_d / pest_d = estimated, act_d = actual
       const scheduledIso = f.sdt;
@@ -186,7 +188,11 @@ Deno.serve(async (req) => {
       if (isNaN(schedDate.getTime()) || isNaN(estDate.getTime())) continue;
 
       const arrivalMs = estDate.getTime();
-      if (arrivalMs < now.getTime() - 5 * 60 * 1000) continue;
+      // Aikaikkuna: laskeutuneet 30 min taakse, muut 5 min taakse → 2 h eteen
+      const minMs = isLanded
+        ? now.getTime() - RECENT_LANDED_MS
+        : now.getTime() - 5 * 60 * 1000;
+      if (arrivalMs < minMs) continue;
       if (arrivalMs > cutoff) continue;
 
       const delay = Math.round((estDate.getTime() - schedDate.getTime()) / 60000);
@@ -212,12 +218,17 @@ Deno.serve(async (req) => {
         gate: f.gate || undefined,
         belt: f.bltarea || undefined,
         status: f.prt_f || f.prm || "",
-        demandTag: tag,
-        demandLevel: level,
+        demandTag: isLanded ? "LASKEUTUNUT" : tag,
+        demandLevel: isLanded ? "amber" : level,
       });
     }
 
+    // Jarjesta: tulevat ensin (ajan mukaan), sitten juuri laskeutuneet (uusin ensin)
     flights.sort((a, b) => {
+      const aLanded = a.demandTag === "LASKEUTUNUT";
+      const bLanded = b.demandTag === "LASKEUTUNUT";
+      if (aLanded !== bLanded) return aLanded ? 1 : -1;
+      if (aLanded && bLanded) return b.estimatedTime.localeCompare(a.estimatedTime);
       if (a.demandLevel === "red" && b.demandLevel !== "red") return -1;
       if (b.demandLevel === "red" && a.demandLevel !== "red") return 1;
       return a.estimatedTime.localeCompare(b.estimatedTime);
