@@ -44,6 +44,7 @@ export const TOLPAT: TolppaLocation[] = [
   { name: "Sanomatalo", lat: 60.1716, lon: 24.9381, zone: "Helsinki keskusta", street: "Töölönlahdenkatu" },
   { name: "Kiasma", lat: 60.1726, lon: 24.9367, zone: "Helsinki keskusta", street: "Mannerheiminaukio" },
   { name: "Ooppera", aliases: ["Kansallisooppera", "Oopperatalo", "Itä-Töölö", "Helsingin kaupunginteatteri", "Kaupunginteatteri"], lat: 60.1827, lon: 24.9270, zone: "Helsinki keskusta", number: 52, street: "Helsinginkatu / Itä-Töölö" },
+  { name: "Helsingin kaupunginteatteri", aliases: ["HKT", "Kaupunginteatteri", "Hkt"], lat: 60.1846, lon: 24.9532, zone: "Helsinki keskusta", number: 18, street: "Eläintarhantie / HKT" },
   { name: "Veikkaus Areena", aliases: ["Veikkausareena", "Helsinki Halli", "Helsinki-halli", "Hartwall Arena", "Hartwall"], lat: 60.2061, lon: 24.9293, zone: "Helsinki pohjoinen", number: 79, street: "Areenakuja / Veikkausareena" },
   { name: "Linnanmäki", aliases: ["Linnanmaki"], lat: 60.1875, lon: 24.9395, zone: "Helsinki keskusta", street: "Tivolitie" },
   { name: "Kaisaniemi", lat: 60.1733, lon: 24.9466, zone: "Helsinki keskusta", street: "Kaisaniemenkatu" },
