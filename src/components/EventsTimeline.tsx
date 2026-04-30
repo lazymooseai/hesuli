@@ -250,13 +250,13 @@ const TimelineCard = ({ item, onClick }: TimelineCardProps) => {
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-black text-lg text-foreground truncate leading-tight">{item.title}</p>
-        <p className="text-sm text-muted-foreground font-semibold truncate mt-1">
+        <p className="text-base text-primary/85 font-bold truncate mt-1">
           {item.subtitle}
         </p>
         <div className="flex items-center gap-1 mt-1">
           {item.tolppa ? (
-            <p className="flex items-center gap-1 text-[12px] font-black uppercase tracking-wider text-primary min-w-0">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <p className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wider text-primary min-w-0">
+              <MapPin className="h-4 w-4 shrink-0" />
               <span className="truncate">
                 {formatTolppaLabel(item.tolppa)}
                 {item.tolppaKmFromUser != null && (
@@ -269,7 +269,7 @@ const TimelineCard = ({ item, onClick }: TimelineCardProps) => {
               </span>
             </p>
           ) : canEditTolppa ? (
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground italic">
+            <p className="text-xs font-bold uppercase tracking-wider text-primary/70 italic">
               Tolppa tuntematon
             </p>
           ) : null}
