@@ -13,6 +13,7 @@ import { EventInfo } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchLinkedEvents } from "./linkedEvents";
 import { fetchKlubiEvents } from "./klubiEvents";
+import { isLowTaxiDemandEvent } from "./eventDemandFilters";
 
 // ---------------------------------------------------------------------------
 // Apufunktiot
@@ -142,6 +143,7 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
   const seenKeys = new Set<string>();
   const rows = ((dbResult.data as DbEventRow[]) ?? []);
   for (const row of rows) {
+    if (isLowTaxiDemandEvent(row.name, row.venue)) continue;
     const ev = rowToEvent(row);
     const key = `${ev.name.toLowerCase()}|${(row.start_time || "").slice(0, 10)}`;
     seenKeys.add(key);
@@ -154,6 +156,7 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
 
   // 2) LinkedEvents + Klubi - lisaa duplikaattien valttamiseksi
   for (const ev of [...linkedEvents, ...klubiEvents]) {
+    if (isLowTaxiDemandEvent(ev.name, ev.venue)) continue;
     const dayKey = (ev.startIso || "").slice(0, 10);
     const key = `${ev.name.toLowerCase()}|${dayKey}`;
     if (seenKeys.has(key)) continue;
