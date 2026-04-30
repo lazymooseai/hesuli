@@ -294,11 +294,10 @@ const VENUE_TOLPPA_OVERRIDES: Record<string, string> = {
   "g livelab": "Kämp",
   "kaisaniemen puisto": "Kaisaniemi",
   // Klubit / business
-  "suomalainen klubi": "Kasarmikatu",
-  "helsingin suomalainen klubi": "Kasarmikatu",
-  "klubi": "Kasarmikatu",
   // Käyttäjän vahvistama: Suomalainen Klubi → tolppa 96 Simonkenttä
-  "suomalainen klubi ": "Simonkenttä",
+  "suomalainen klubi": "Simonkenttä",
+  "helsingin suomalainen klubi": "Simonkenttä",
+  "klubi": "Simonkenttä",
   // Hotellit
   "hotel kämp": "Kämp",
   "kamp": "Kämp",
