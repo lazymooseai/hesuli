@@ -8,6 +8,7 @@ import TutkaTab from "@/components/tabs/TutkaTab";
 import LiikenneTab from "@/components/tabs/LiikenneTab";
 import SapinaTab from "@/components/tabs/SapinaTab";
 import HallintaTab from "@/components/tabs/HallintaTab";
+import SuggestionButton from "@/components/SuggestionButton";
 
 const Index = () => {
   const [tab, setTab] = useState<TabKey>("tutka");
@@ -25,6 +26,11 @@ const Index = () => {
         </main>
         <ScanButton />
         <BottomNav active={tab} onChange={setTab} />
+        <SuggestionButton
+          feature={`Yleinen / ${tab}`}
+          context="Kelluva palautenappi — koskee aktiivista välilehteä"
+          variant="floating"
+        />
       </div>
     </DashboardProvider>
   );
