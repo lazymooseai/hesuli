@@ -155,6 +155,11 @@ const IMPORTANT_PATTERNS = [
   /helsingin jäähalli/i,
 ];
 
+const HARD_BLOCK_PATTERNS = [
+  /tahdon tarina/i,
+  /urheilumuseo/i,
+];
+
 function isImportantVenue(name: string, venue: string): boolean {
   const txt = `${name} ${venue}`;
   return IMPORTANT_PATTERNS.some((re) => re.test(txt));
@@ -162,6 +167,8 @@ function isImportantVenue(name: string, venue: string): boolean {
 
 function isNoise(name: string, venue: string): boolean {
   const txt = `${name} ${venue}`;
+  // Hard block: nama suodatetaan AINA pois, vaikka venue olisi "tarkea"
+  if (HARD_BLOCK_PATTERNS.some((re) => re.test(txt))) return true;
   if (isImportantVenue(name, venue)) return false;
   return NOISE_PATTERNS.some((re) => re.test(txt));
 }
