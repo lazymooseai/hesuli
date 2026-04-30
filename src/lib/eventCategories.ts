@@ -327,11 +327,15 @@ export function eventToTimelineItem(e: EventInfo): TimelineItem {
       : undefined;
 
   const tolppaMatch = findTolppaForVenue(e.venue);
+  // Helsingin kaupunginteatterin tapahtumiin näyttämömerkintä subtitleen
+  // (Suuri näyttämö = 1120, Arena = 500, Studio Pasila = 320, Pieni = 250).
+  // Auttaa kuljettajaa arvioimaan kysynnän kokoluokan suoraan listalta.
+  const subtitle = annotateHktStage(e.name, e.venue);
   return {
     id: `event-${e.id}`,
     category: categorizeEvent(e.name, e.venue),
     title: e.name,
-    subtitle: e.venue,
+    subtitle,
     time,
     startMs,
     startIso: e.startIso,
