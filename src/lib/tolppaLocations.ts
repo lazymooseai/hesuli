@@ -75,6 +75,9 @@ export const TOLPAT: TolppaLocation[] = [
   { name: "Käpylä", aliases: ["Kapyla"], lat: 60.2153, lon: 24.9520, zone: "Helsinki pohjoinen" },
   { name: "Oulunkylä", aliases: ["Oulunkyla"], lat: 60.2293, lon: 24.9678, zone: "Helsinki pohjoinen" },
   { name: "Malmi", aliases: ["Malmin asema"], lat: 60.2510, lon: 25.0090, zone: "Helsinki pohjoinen" },
+  { name: "Malmitalo", aliases: ["Malmin tori", "Ala-Malmi"], lat: 60.2503, lon: 25.0094, zone: "Helsinki pohjoinen", number: 44, street: "Ala-Malmin tori / Malmitalo" },
+  { name: "Kallio", aliases: ["Kallion tolppa", "Kulttuuritalo Sturenkatu", "Konepaja", "Vallilan konepaja"], lat: 60.1842, lon: 24.9508, zone: "Helsinki keskusta", number: 26, street: "Sturenkatu / Kulttuuritalo / Konepaja" },
+  { name: "Kalasatama", aliases: ["Redi", "Teurastamo", "Tukkutori"], lat: 60.1872, lon: 24.9787, zone: "Helsinki itä", number: 25, street: "Kalasatama / Teurastamo" },
 
   // === Helsinki itä ===
   { name: "Itäkeskus", aliases: ["Itakeskus", "Itis"], lat: 60.2103, lon: 25.0807, zone: "Helsinki itä" },
