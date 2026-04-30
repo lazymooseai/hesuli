@@ -16,9 +16,12 @@ Lähde: käyttäjän toimittama `Tolpat_ja_ruudut.txt`.
 - 4 KÄMP, 6 SENAATINTORI/Aleksanterinkatu (Säätytalo), 11 RUOHOLAHTI
 - 14 RAUTATIENTORI, 19 SEASIDE/Finlandia
 - 21 EROTTAJA (Savoy), 27 LINNANMÄKI (HKT-alue)
+- 25 KALASATAMA (Teurastamo, Tukkutori, Suvilahti)
+- 26 KALLIO/STURENKATU (Kulttuuritalo, Konepaja Vallila)
 - 35 LASIPALATSI (Pikkuparlamentti/Presidentti)
 - 37 ELIELINAUKIO (asema-aukio), 39 ELIELINAUKIO Musiikkitalo
 - 41 MUSEOKATU (Eduskunta, Storyville)
+- 44 MALMI (Malmitalo, Ala-Malmin tori)
 - 45 TÖÖLÖNTORI (käyttäjä: Stadion-alue tolppa 52 Itä-Töölö, ei 45)
 - 52 TOIVONKATU/JAKOMÄKI (käyttäjäyhdistys: Ooppera/Itä-Töölö → 52)
 - 59 KAMPPI, 79 VEIKKAUS AREENA, 96 SIMONKENTTÄ
@@ -28,6 +31,12 @@ HUOM: Olympiastadion ja HKT (Kaupunginteatteri) on käyttäjän pyynnöstä
 mapattu tolppaan **52 Ooppera/Itä-Töölö**, vaikka virallinen lista ei suoraan
 vastaa tätä — käyttäjällä on alue­tuntemus.
 Suomalainen Klubi → **96 Simonkenttä** (ei Kasarmikatu).
+Urheilumuseo "Tahdon tarina" suodatetaan pois LinkedEventsista (pieni
+näyttely, ei taksikysyntää) — `linkedEvents.ts` NOISE_PATTERNS sisältää
+/tahdon tarina/, /urheilumuseo/, /näyttely/.
+Eduskunnan täysistunnot suodatetaan kokonaan pois Wikidata-syötteestä ja
+kannasta — vanhentuneita/vääriä aikatauluja. Käyttäjä lisää tarvittaessa
+manuaalisesti Hallinta-välilehdeltä.
 
 ## Manuaaliset overridet (`src/lib/manualTolppaOverrides.ts`)
 - Käyttäjä voi korjata yksittäisen tapahtuman tolpan kynänappi-iconilla kortin alanurkasta.

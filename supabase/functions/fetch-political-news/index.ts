@@ -93,6 +93,10 @@ async function fetchWikidata(): Promise<PoliticalEv[]> {
     // Suodata: ohitetaan urheilukisat ja konsertit (eivät ole "poliittisia")
     if (/cup|championship|olymp|tour de|marathon|festival/i.test(title)) continue;
 
+    // Suodata: eduskunta-aiheiset Wikidata-rivit ovat vanhentuneita / vääriä —
+    // käyttäjä lisää täysistunnot manuaalisesti Hallinta-välilehdeltä.
+    if (/eduskun|parliament|täysistun|taysistun/i.test(title + " " + (typeLbl || ""))) continue;
+
     // Kategoria-päättely
     let category = "muu";
     let vip: string | undefined;
@@ -214,6 +218,12 @@ Deno.serve(async (req) => {
       .from("political_events")
       .delete()
       .eq("source", "eduskunta-cal");
+
+    // Siivoa myös Wikidatasta tulleet eduskunta-rivit (vanhentuneita aikatauluja)
+    await supabase
+      .from("political_events")
+      .delete()
+      .or("title.ilike.%eduskun%,title.ilike.%parliament%,title.ilike.%täysistun%,category.eq.eduskunta");
 
     let inserted = 0;
     let updated = 0;

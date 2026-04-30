@@ -133,6 +133,11 @@ const NOISE_PATTERNS = [
   /digiopastus/i,
   /ilmaispäivä/i,
   /päättynyt/i,
+  // Pienet museonäyttelyt joilla ei ole taksikysyntää (vaikka venue isolta kuulostaa)
+  /tahdon tarina/i,
+  /urheilumuseo/i,
+  /näyttely/i,
+  /nayttely/i,
 ];
 
 const IMPORTANT_PATTERNS = [
