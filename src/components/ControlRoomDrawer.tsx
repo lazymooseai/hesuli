@@ -146,7 +146,7 @@ const categories: LinkCategory[] = [
       },
       {
         label: "Tanssin Talo",
-        url: "https://www.tanssintalo.fi/ohjelma",
+        url: "https://www.tanssintalo.fi/",
       },
     ],
   },
