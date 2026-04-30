@@ -401,7 +401,7 @@ export function flightToTimelineItem(f: FlightArrival): TimelineItem {
     level: f.demandLevel,
     weight,
     tag: f.demandTag,
-    url: `https://www.finavia.fi/fi/lentoasemat/helsinki-vantaa/saapuvat-lennot?flight=${encodeURIComponent(f.flightNumber)}`,
+    url: `https://www.finavia.fi/fi/lentoasemat/helsinki-vantaa/lennot?tab=arr&flight=${encodeURIComponent(f.flightNumber)}`,
     raw: { kind: "flight", data: f },
   };
 }
@@ -423,7 +423,7 @@ export function shipToTimelineItem(s: ShipArrival): TimelineItem {
     level,
     weight,
     capacity: s.pax,
-    url: `https://www.portofhelsinki.fi/matkustajat/aikataulut`,
+    url: `https://averio.fi/laivat`,
     raw: { kind: "ship", data: s },
   };
 }
