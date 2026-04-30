@@ -91,7 +91,13 @@ const NextArrivalsCarousel = () => {
                 <ChevronRight className="h-4 w-4 ml-auto opacity-50" />
               </div>
               <p className="mt-2 font-black text-2xl text-foreground truncate">{it.title}</p>
-              <p className="text-sm text-muted-foreground font-bold truncate">{it.sub}</p>
+              <p
+                className={`text-sm text-muted-foreground font-bold ${
+                  it.kind === "flight" ? "break-words leading-snug" : "truncate"
+                }`}
+              >
+                {it.sub}
+              </p>
               <div className="mt-2 flex items-end justify-between gap-2">
                 <span
                   className={`font-mono font-black text-4xl ${
