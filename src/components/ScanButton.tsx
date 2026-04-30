@@ -24,7 +24,7 @@ const ScanButton = () => {
         <button
           onClick={() => setOpen(true)}
           disabled={isLoading}
-          aria-label="Skannaa valityslaitteen naytto"
+          aria-label="Skannaa välityslaitteen näyttö"
           className={`h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-2xl transition-all
             ${isLoading
               ? "opacity-50 cursor-not-allowed"

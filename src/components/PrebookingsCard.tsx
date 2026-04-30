@@ -66,7 +66,7 @@ const formatPickup = (iso: string) => {
 /** "30 min" / "2 h 15 min" / "menossa nyt" / "myohassa 5 min" */
 const formatCountdown = (iso: string) => {
   const diffMin = Math.round((new Date(iso).getTime() - Date.now()) / 60_000);
-  if (diffMin <= -1) return { label: `myohassa ${-diffMin} min`, urgent: true };
+  if (diffMin <= -1) return { label: `myöhässä ${-diffMin} min`, urgent: true };
   if (diffMin <= 5) return { label: "menossa nyt", urgent: true };
   if (diffMin < 60) return { label: `${diffMin} min`, urgent: diffMin <= 15 };
   const h = Math.floor(diffMin / 60);
@@ -125,7 +125,7 @@ const PrebookingsCard = () => {
             size="sm"
             className="h-8 bg-primary text-primary-foreground"
           >
-            <Plus className="h-3 w-3 mr-1" /> Lisaa
+            <Plus className="h-3 w-3 mr-1" /> Lisää
           </Button>
         </div>
 
@@ -133,7 +133,7 @@ const PrebookingsCard = () => {
           <p className="text-sm text-muted-foreground py-2">Ladataan ennakkoja...</p>
         ) : upcoming.length === 0 && history.length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">
-            Ei ennakkotilauksia. Lisaa kuvalla, PDF:lla tai tekstilla.
+            Ei ennakkotilauksia. Lisää kuvalla, PDF:lla tai tekstillä.
           </p>
         ) : (
           <Tabs defaultValue="list">
@@ -335,7 +335,7 @@ const BookingsHeatmap = ({ history }: { history: PreBooking[] }) => {
 
       <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
         <MapPin className="h-3 w-3" />
-        <span>Vahan</span>
+        <span>Vähän</span>
         <div className="flex">
           <div className="w-4 h-3 bg-amber-500/20" />
           <div className="w-4 h-3 bg-amber-500/40" />

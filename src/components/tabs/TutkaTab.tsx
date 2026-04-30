@@ -1,6 +1,5 @@
 import CommandCenter from "@/components/CommandCenter";
 import JackpotAlert from "@/components/JackpotAlert";
-import PrebookingsCard from "@/components/PrebookingsCard";
 import NextArrivalsCarousel from "@/components/NextArrivalsCarousel";
 import SuggestionButton from "@/components/SuggestionButton";
 
@@ -28,16 +27,6 @@ const TutkaTab = () => {
           <SuggestionButton feature="Tutka / Seuraavat saapujat" />
         </div>
         <NextArrivalsCarousel />
-      </section>
-
-      <section aria-label="Ennakkotilaukset">
-        <div className="flex items-center justify-between mb-2 px-1">
-          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-            Ennakkotilaukset
-          </h2>
-          <SuggestionButton feature="Tutka / Ennakkotilaukset" />
-        </div>
-        <PrebookingsCard />
       </section>
     </div>
   );

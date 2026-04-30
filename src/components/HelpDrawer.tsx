@@ -59,6 +59,12 @@ const HelpDrawer = () => {
             <Bullet>
               Vihreä piste = LIVE-data, harmaa = aikataulu.
             </Bullet>
+            <Bullet>
+              Tutkan <strong>"Seuraavat saapujat"</strong> -kortissa näkyy
+              kolme lähintä junaa. Painamalla
+              <em>"Näytä 5 seuraavaa junaa"</em> saat näkyviin yhteensä 8
+              seuraavaa.
+            </Bullet>
           </Section>
 
           <Section icon={<TrendingUp className="h-5 w-5 text-primary" />} title="Säpinä — tapahtumat & kysyntä">
@@ -91,9 +97,15 @@ const HelpDrawer = () => {
           </Section>
 
           <Section icon={<Settings className="h-5 w-5 text-primary" />} title="Hallinta">
-            Reittityökalut, kyytihistoria ja palautenappi. Täältä voit lisätä
-            manuaalisesti tapahtumia (esim. yksityistilaisuudet) jotka muut
-            lähteet eivät huomaa.
+            Reittityökalut, kyytihistoria, ennakkotilaukset ja palautenappi.
+            Täältä voit lisätä manuaalisesti tapahtumia (esim. yksityis-
+            tilaisuudet) jotka muut lähteet eivät huomaa.
+            <Bullet>
+              <strong>Ennakkotilaukset</strong> on toistaiseksi täällä Hallinta-
+              välilehdellä. Kun kortti oppii ennustamaan tunnin sisään saapuvat
+              ennakot tarpeeksi tarkasti, se nostetaan takaisin Tutka-näkymän
+              etusivulle.
+            </Bullet>
           </Section>
 
           <Section icon={<Cloud className="h-5 w-5 text-accent" />} title="Sää & sademodus">

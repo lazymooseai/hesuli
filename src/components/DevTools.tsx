@@ -79,7 +79,7 @@ const DevTools = () => {
             ) : (
               <RefreshCw className="h-5 w-5 text-primary" />
             )}
-            {isLoading ? "Haetaan..." : "Paivita kaikki tiedot"}
+            {isLoading ? "Haetaan..." : "Päivitä kaikki tiedot"}
           </button>
 
           {/* Viimeisin paivitys */}

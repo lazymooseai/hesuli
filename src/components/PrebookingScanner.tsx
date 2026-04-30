@@ -131,12 +131,12 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
       setAnalyzeNote("Gemini AI lukee ennakkotilauksia...");
       const res = await runImageBookings(dataUrl);
       if (!res.ok) {
-        toast.error("AI-luenta epaonnistui: " + res.error);
+        toast.error("AI-luenta epäonnistui: " + res.error);
         setStage("capture");
         return;
       }
       if (res.bookings.length === 0) {
-        toast.warning("AI ei loytanyt ennakkotilauksia kuvasta");
+        toast.warning("AI ei löytänyt ennakkotilauksia kuvasta");
         setStage("capture");
         return;
       }
@@ -145,7 +145,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
       setRawText(res.raw_text ?? null);
       setStage("review");
     } catch (e) {
-      toast.error("Kuvan kasittely epaonnistui");
+      toast.error("Kuvan käsittely epäonnistui");
       setStage("capture");
     }
   };
@@ -178,19 +178,19 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
         res = await runPdfBookings(dataUrl);
         setSourceLabel("pdf");
       } else {
-        setAnalyzeNote("Jasennetaan tekstia...");
+        setAnalyzeNote("Jäsennetään tekstiä...");
         const text = await fileToText(file);
         res = parseTextToBookings(text);
         setSourceLabel("text");
         setRawText(text.slice(0, 1000));
       }
       if (!res.ok) {
-        toast.error("Luenta epaonnistui: " + res.error);
+        toast.error("Luenta epäonnistui: " + res.error);
         setStage("capture");
         return;
       }
       if (res.bookings.length === 0) {
-        toast.warning("Ei loydetty ennakkotilauksia");
+        toast.warning("Ei löydetty ennakkotilauksia");
         setStage("capture");
         return;
       }
@@ -198,7 +198,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
       if (isPdf) setRawText(res.raw_text ?? null);
       setStage("review");
     } catch (e) {
-      toast.error("Tiedoston kasittely epaonnistui");
+      toast.error("Tiedoston käsittely epäonnistui");
       setStage("capture");
     }
   };
@@ -229,7 +229,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
   const handleSave = async () => {
     const valid = bookings.filter((b) => b.tolppa.trim() && b.pickup_at);
     if (valid.length === 0) {
-      toast.error("Yhtaan kelvollista tilausta (tolppa + aika pakollisia)");
+      toast.error("Yhtään kelvollista tilausta (tolppa + aika pakollisia)");
       return;
     }
     setSaving(true);
@@ -241,7 +241,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
       reset();
       onOpenChange(false);
     } else {
-      toast.error("Tallennus epaonnistui: " + (result.error ?? "tuntematon"));
+      toast.error("Tallennus epäonnistui: " + (result.error ?? "tuntematon"));
     }
   };
 
@@ -250,7 +250,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
       <SheetContent side="bottom" className="h-[92vh] overflow-y-auto bg-slate-900 border-slate-700">
         <SheetHeader>
           <SheetTitle className="text-2xl font-black text-foreground">
-            {stage === "capture" && "Lisaa ennakkotilaukset"}
+            {stage === "capture" && "Lisää ennakkotilaukset"}
             {stage === "analyzing" && "AI lukee ennakkoja..."}
             {stage === "review" && `Tarkista ${bookings.length} ennakkoa`}
           </SheetTitle>
@@ -259,7 +259,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
         {stage === "capture" && (
           <div className="mt-6 space-y-4">
             <p className="text-sm text-muted-foreground">
-              Lisaa kuva, PDF tai tekstitiedosto ennakkotilauslistasta.
+              Lisää kuva, PDF tai tekstitiedosto ennakkotilauslistasta.
               AI lukee jokaisen tilauksen tolpan ja noutoajan.
             </p>
 
@@ -300,7 +300,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
               className="w-full h-16 text-lg font-bold border-slate-600"
             >
               <Upload className="h-6 w-6 mr-3" />
-              Lisaa kuvatiedosto
+              Lisää kuvatiedosto
             </Button>
 
             <div className="pt-2 border-t border-slate-700" />
@@ -311,7 +311,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
               className="w-full h-16 text-lg font-bold border-slate-600"
             >
               <FileText className="h-6 w-6 mr-3" />
-              Lisaa TXT / HTML / PDF
+              Lisää TXT / HTML / PDF
             </Button>
 
             <div className="pt-2 border-t border-slate-700" />
@@ -321,7 +321,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
               variant="ghost"
               className="w-full text-muted-foreground"
             >
-              <Plus className="h-4 w-4 mr-2" /> Lisaa kasin yksi tilaus
+              <Plus className="h-4 w-4 mr-2" /> Lisää käsin yksi tilaus
             </Button>
           </div>
         )}
@@ -340,7 +340,7 @@ const PrebookingScanner = ({ open, onOpenChange, onSaved }: Props) => {
                 Lähde: {sourceLabel}
               </Badge>
               <Button onClick={addBooking} size="sm" variant="ghost" className="text-xs">
-                <Plus className="h-3 w-3 mr-1" /> Lisaa rivi
+                <Plus className="h-3 w-3 mr-1" /> Lisää rivi
               </Button>
             </div>
 

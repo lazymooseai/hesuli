@@ -1,4 +1,5 @@
-import { TrainFront, Ship, Plane, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { TrainFront, Ship, Plane, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 
 /**
@@ -7,6 +8,7 @@ import { useDashboard } from "@/context/DashboardContext";
  */
 const NextArrivalsCarousel = () => {
   const { state } = useDashboard();
+  const [showMoreTrains, setShowMoreTrains] = useState(false);
 
   type Item = {
     key: string;
@@ -20,7 +22,8 @@ const NextArrivalsCarousel = () => {
 
   const items: Item[] = [];
 
-  state.trainDelays.slice(0, 3).forEach((t) => {
+  const trainCount = showMoreTrains ? 8 : 3;
+  state.trainDelays.slice(0, trainCount).forEach((t) => {
     items.push({
       key: `tr-${t.id}`,
       kind: "train",
@@ -54,7 +57,9 @@ const NextArrivalsCarousel = () => {
 
   // Sort by time HH:MM
   items.sort((a, b) => a.time.localeCompare(b.time));
-  const top = items.slice(0, 8);
+  const top = items.slice(0, showMoreTrains ? 16 : 8);
+
+  const hasMoreTrains = state.trainDelays.length > 3;
 
   if (top.length === 0) {
     return (
@@ -123,6 +128,25 @@ const NextArrivalsCarousel = () => {
           );
         })}
       </div>
+      {hasMoreTrains && (
+        <div className="px-4 pt-1">
+          <button
+            type="button"
+            onClick={() => setShowMoreTrains((v) => !v)}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card/60 py-2 text-xs font-black uppercase tracking-widest text-primary active:scale-[0.98] transition"
+          >
+            {showMoreTrains ? (
+              <>
+                <ChevronUp className="h-4 w-4" /> Näytä vähemmän junia
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" /> Näytä 5 seuraavaa junaa
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

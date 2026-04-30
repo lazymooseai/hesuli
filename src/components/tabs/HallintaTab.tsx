@@ -3,10 +3,25 @@ import TripHistoryCard from "@/components/trips/TripHistoryCard";
 import FeedbackButtons from "@/components/FeedbackButtons";
 import DevTools from "@/components/DevTools";
 import SuggestionButton from "@/components/SuggestionButton";
+import PrebookingsCard from "@/components/PrebookingsCard";
 
 const HallintaTab = () => {
   return (
     <div className="px-4 pt-2 pb-6 space-y-6">
+      <section aria-label="Ennakkotilaukset">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            Ennakkotilaukset
+          </h2>
+          <SuggestionButton feature="Hallinta / Ennakkotilaukset" />
+        </div>
+        <p className="text-xs text-muted-foreground/80 mb-2 px-1">
+          Beta — siirretään Tutka-näkymään, kun ennuste tunnin sisään saapuvista
+          ennakoista on tarpeeksi tarkka.
+        </p>
+        <PrebookingsCard />
+      </section>
+
       <section aria-label="Reittityökalut ja tuonti">
         <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2 px-1">
           Työkalut & Datan tuonti

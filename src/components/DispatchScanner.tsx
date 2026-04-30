@@ -102,7 +102,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       setAnalyzeNote("Gemini AI lukee numeroita...");
       const res = await runOcr(dataUrl);
       if (!res.ok) {
-        toast.error("AI-luenta epaonnistui: " + res.error);
+        toast.error("AI-luenta epäonnistui: " + res.error);
         setStage("capture");
         return;
       }
@@ -117,7 +117,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       });
       setStage("review");
     } catch (e) {
-      toast.error("Kuvan kasittely epaonnistui");
+      toast.error("Kuvan käsittely epäonnistui");
       setStage("capture");
     }
   };
@@ -133,7 +133,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       return;
     }
     setStage("analyzing");
-    setAnalyzeNote("Puretaan videon avainkehyksia...");
+    setAnalyzeNote("Puretaan videon avainkehyksiä...");
     try {
       const ext = await extractVideoFrames(file, { frameCount: 4, maxDurationSec: MAX_VIDEO_SEC });
       if (!ext.ok) {
@@ -143,7 +143,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       }
       // Esikatselu: nayta ensimmainen frame heti
       setImageDataUrl(ext.frames[0].dataUrl);
-      setAnalyzeNote(`AI lukee ${ext.frames.length} avainkehysta videosta...`);
+      setAnalyzeNote(`AI lukee ${ext.frames.length} avainkehystä videosta...`);
 
       // Aja OCR jokaiselle framelle, valitse korkein confidence
       const results = await Promise.all(ext.frames.map((f) => runOcr(f.dataUrl)));
@@ -160,7 +160,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
 
       if (!bestRes || bestIdx < 0) {
         const firstErr = results.find((r): r is { ok: false; error: string } => !r.ok);
-        toast.error("AI-luenta epaonnistui: " + (firstErr ? firstErr.error : "tuntematon"));
+        toast.error("AI-luenta epäonnistui: " + (firstErr ? firstErr.error : "tuntematon"));
         setStage("capture");
         return;
       }
@@ -180,7 +180,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       });
       setStage("review");
     } catch (e) {
-      toast.error("Videon kasittely epaonnistui");
+      toast.error("Videon käsittely epäonnistui");
       setStage("capture");
     }
   };
@@ -216,13 +216,13 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
         const dataUrl = await fileToDataUrl(file);
         res = await runPdfOcr(dataUrl);
       } else {
-        setAnalyzeNote("Jasennetaan tekstia...");
+        setAnalyzeNote("Jäsennetään tekstiä...");
         const text = await fileToText(file);
         res = parseTextToOcr(text);
       }
 
       if (!res.ok) {
-        toast.error("Luenta epaonnistui: " + res.error);
+        toast.error("Luenta epäonnistui: " + res.error);
         setStage("capture");
         return;
       }
@@ -238,7 +238,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       });
       setStage("review");
     } catch (e) {
-      toast.error("Tiedoston kasittely epaonnistui");
+      toast.error("Tiedoston käsittely epäonnistui");
       setStage("capture");
     }
   };
@@ -285,7 +285,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       reset();
       onOpenChange(false);
     } else {
-      toast.error("Tallennus epaonnistui: " + result.error);
+      toast.error("Tallennus epäonnistui: " + result.error);
     }
   };
 
@@ -296,7 +296,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
       <SheetContent side="bottom" className="h-[92vh] overflow-y-auto bg-slate-900 border-slate-700">
         <SheetHeader>
           <SheetTitle className="text-2xl font-black text-foreground">
-            {stage === "capture" && "Skannaa valityslaite"}
+            {stage === "capture" && "Skannaa välityslaite"}
             {stage === "analyzing" && "AI lukee numeroita..."}
             {stage === "review" && "Tarkista luvut"}
           </SheetTitle>
@@ -361,7 +361,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
               className="w-full h-20 text-xl font-bold border-slate-600"
             >
               <Upload className="h-7 w-7 mr-3" />
-              Lisaa kuvatiedosto
+              Lisää kuvatiedosto
             </Button>
 
             <div className="pt-2 border-t border-slate-700" />
@@ -375,7 +375,7 @@ const DispatchScanner = ({ open, onOpenChange, onSaved }: Props) => {
               className="w-full h-16 text-lg font-bold border-slate-600"
             >
               <FileText className="h-6 w-6 mr-3" />
-              Lisaa TXT / HTML / PDF
+              Lisää TXT / HTML / PDF
             </Button>
 
             <div className="pt-2 border-t border-slate-700" />
