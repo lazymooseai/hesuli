@@ -228,8 +228,9 @@ export async function fetchLiveTrains(station: TrainStation = "HKI"): Promise<Tr
     );
     const isNight = hkiHour >= 22 || hkiHour < 6;
     // Laajennettu paivaikkuna 120 min jotta kaukojunat (esim. Tampere)
-    // nakyvat ajoissa, kun kuski tarvitsee ennakkotietoa.
-    const windowMs = (isNight ? 240 : 120) * 60 * 1000;
+    // nakyvat ajoissa. Yolla 8h jotta aamun ensimmaiset junat nakyvat
+    // hiljaisina tunteina (klo 01-05) eika lista ole tyhja.
+    const windowMs = (isNight ? 480 : 120) * 60 * 1000;
     if (arrivalEpoch < now - 2 * 60 * 1000) continue;
     if (arrivalEpoch > now + windowMs) continue;
 
