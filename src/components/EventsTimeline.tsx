@@ -512,7 +512,7 @@ const EventsTimeline = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
   const hiddenToday = todayItems.length - visibleToday.length;
   const hiddenUpcoming = isUpcomingOpen ? upcomingItems.length - visibleUpcoming.length : 0;
   const hiddenCount = hiddenToday + hiddenUpcoming;
-  const hasAnything = visibleToday.length > 0 || visibleUpcoming.length > 0;
+  const hasAnything = visibleToday.length > 0 || upcomingItems.length > 0;
 
   // Swipe handlers
   const swipe = useSwipeable({
