@@ -309,9 +309,13 @@ export async function fetchLinkedEvents(): Promise<EventInfo[]> {
 
     if (isNoise(name, venue)) continue;
 
-    const displayStartIso = startMs < todayStart.getTime() && endMs >= todayStart.getTime()
+    const isTodayStartedEarlier = startMs < todayStart.getTime() && endMs >= todayStart.getTime();
+    const displayStartIso = isTodayStartedEarlier
       ? todayAtSameLocalClock(ev.start_time, now)
       : ev.start_time;
+    const displayEndIso = isTodayStartedEarlier && ev.end_time
+      ? todayAtSameLocalClock(ev.end_time, now)
+      : ev.end_time;
 
     // Dedupe: sama nimi + alkamispaiva
     const dayKey = new Date(displayStartIso || ev.start_time).toISOString().slice(0, 10);
@@ -335,7 +339,7 @@ export async function fetchLinkedEvents(): Promise<EventInfo[]> {
       demandLevel: level,
       startTime: fmtTime(displayStartIso || ev.start_time),
       startIso: displayStartIso || ev.start_time,
-      endTime: fmtTime(ev.end_time),
+      endTime: fmtTime(displayEndIso),
       capacity,
       availabilityNote: pickName(ev.short_description as { fi?: string }) || undefined,
       infoUrl: ev.info_url?.fi || undefined,
