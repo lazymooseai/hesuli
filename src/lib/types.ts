@@ -85,6 +85,8 @@ export interface SportsEvent {
   awayTeam: string;
   venue: string;
   startTime: string;          // HH:MM
+  startIso?: string;          // Täysi ISO-aikaleima (jos saatavilla)
+  endIso?: string;
   expectedAttendance: number;
   capacity: number;
   league: string;             // "Liiga", "Veikkausliiga", "NHL preseason" jne.
