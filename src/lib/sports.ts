@@ -209,6 +209,8 @@ export async function fetchSportsEvents(): Promise<SportsEvent[]> {
           awayTeam: teams.away,
           venue,
           startTime: fmtHHMM(ev.start_time),
+          startIso: ev.start_time,
+          endIso: ev.end_time,
           expectedAttendance: attendance,
           capacity: cap,
           league,
