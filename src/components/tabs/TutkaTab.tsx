@@ -2,6 +2,7 @@ import CommandCenter from "@/components/CommandCenter";
 import JackpotAlert from "@/components/JackpotAlert";
 import NextArrivalsCarousel from "@/components/NextArrivalsCarousel";
 import SuggestionButton from "@/components/SuggestionButton";
+import DisruptionsCard from "@/components/DisruptionsCard";
 
 const TutkaTab = () => {
   return (
@@ -27,6 +28,16 @@ const TutkaTab = () => {
           <SuggestionButton feature="Tutka / Seuraavat saapujat" />
         </div>
         <NextArrivalsCarousel />
+      </section>
+
+      <section aria-label="Häiriötiedote">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            Häiriötiedote
+          </h2>
+          <SuggestionButton feature="Tutka / Häiriötiedote" context="Metro, juna, laivat, lentokenttä" />
+        </div>
+        <DisruptionsCard />
       </section>
     </div>
   );

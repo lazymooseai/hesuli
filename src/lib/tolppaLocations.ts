@@ -303,6 +303,8 @@ const VENUE_TOLPPA_OVERRIDES: Record<string, string> = {
   "suvilahti": "Kalasatama",
   "g livelab": "Kämp",
   "kaisaniemen puisto": "Kaisaniemi",
+  "on the rocks": "Asema-aukio",
+  "on the rocks helsinki": "Asema-aukio",
   // Klubit / business
   // Käyttäjän vahvistama: Suomalainen Klubi → tolppa 96 Simonkenttä
   "suomalainen klubi": "Simonkenttä",

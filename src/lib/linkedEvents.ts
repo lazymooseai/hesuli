@@ -74,6 +74,8 @@ const TARGET_TEXT_QUERIES = [
   "Suomen kansallisooppera",
   "Musiikkitalo",
   "Helsingin Jäähalli",
+  "G Livelab",
+  "On the Rocks",
 ];
 
 const KEYWORD_QUERY = [
