@@ -1,6 +1,28 @@
 import { useState } from "react";
-import { TrainFront, Ship, Plane, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
+import { TrainFront, Ship, Plane, ChevronDown, ChevronUp, Users } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
+import DemandFeedbackSheet from "@/components/DemandFeedbackSheet";
+import { useDemandFeedback } from "@/hooks/useDemandFeedback";
+import { DEMAND_SHORT, DEMAND_COLOR, latestForCard } from "@/lib/demandFeedback";
+
+const ZONE_LINKS: Record<string, string> = {
+  "lansiterminaali": "https://averio.fi/laivat",
+  "länsiterminaali": "https://averio.fi/laivat",
+  "katajanokka": "https://averio.fi/laivat",
+  "olympiaterminaali": "https://averio.fi/laivat",
+  "jätkäsaari": "https://averio.fi/laivat",
+  "helsinki-vantaa": "https://www.finavia.fi/fi/lentoasemat/helsinki-vantaa/lennot?tab=arr",
+};
+
+function deepLinkFor(kind: "train" | "ship" | "flight", sub: string): string {
+  if (kind === "train") return "https://junalahdot.fi/helsinki";
+  if (kind === "flight") return "https://www.finavia.fi/fi/lentoasemat/helsinki-vantaa/lennot?tab=arr";
+  const key = sub.toLowerCase();
+  for (const [k, url] of Object.entries(ZONE_LINKS)) {
+    if (key.includes(k)) return url;
+  }
+  return "https://averio.fi/laivat";
+}
 
 /**
  * Horizontal swipe carousel: next 1–2 trains/ships/flights in arrival order.
@@ -9,6 +31,8 @@ import { useDashboard } from "@/context/DashboardContext";
 const NextArrivalsCarousel = () => {
   const { state } = useDashboard();
   const [showMoreTrains, setShowMoreTrains] = useState(false);
+  const feedback = useDemandFeedback();
+  const [sheetItem, setSheetItem] = useState<Item | null>(null);
 
   type Item = {
     key: string;
@@ -76,15 +100,20 @@ const NextArrivalsCarousel = () => {
   };
 
   return (
+    <>
     <div className="-mx-4">
       <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-2 scrollbar-none">
         {top.map((it) => {
           const delayed = (it.delay ?? 0) > 5;
           const onTime = (it.delay ?? 0) <= 0;
+          const cardKey = `${it.kind}:${it.key}`;
+          const recent = latestForCard(feedback, cardKey);
           return (
-            <div
+            <button
+              type="button"
               key={it.key}
-              className={`snap-start shrink-0 w-[78%] rounded-xl border-l-4 border border-border bg-card px-4 py-4 ${
+              onClick={() => setSheetItem(it)}
+              className={`text-left snap-start shrink-0 w-[78%] rounded-xl border-l-4 border border-border bg-card px-4 py-4 active:scale-[0.98] transition ${
                 delayed ? "border-l-destructive" : onTime ? "border-l-primary" : "border-l-accent"
               }`}
             >
@@ -93,7 +122,7 @@ const NextArrivalsCarousel = () => {
                 <span className="text-xs font-black uppercase tracking-widest">
                   {it.kind === "train" ? "Juna" : it.kind === "ship" ? "Laiva" : "Lento"}
                 </span>
-                <ChevronRight className="h-4 w-4 ml-auto opacity-50" />
+                <Users className="h-4 w-4 ml-auto opacity-50" />
               </div>
               <p className="mt-2 font-black text-2xl text-foreground truncate">{it.title}</p>
               <p
@@ -124,7 +153,12 @@ const NextArrivalsCarousel = () => {
                   )}
                 </div>
               </div>
-            </div>
+              {recent && (
+                <div className={`mt-2 inline-flex items-center gap-1 rounded-md border border-border bg-background/60 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${DEMAND_COLOR[recent.demand_level]}`}>
+                  <Users className="h-3 w-3" /> {DEMAND_SHORT[recent.demand_level]}
+                </div>
+              )}
+            </button>
           );
         })}
       </div>
@@ -148,6 +182,19 @@ const NextArrivalsCarousel = () => {
         </div>
       )}
     </div>
+    {sheetItem && (
+      <DemandFeedbackSheet
+        open={!!sheetItem}
+        onOpenChange={(o) => !o && setSheetItem(null)}
+        cardKey={`${sheetItem.kind}:${sheetItem.key}`}
+        cardType={sheetItem.kind}
+        title={`${sheetItem.title} • ${sheetItem.time}`}
+        subtitle={sheetItem.sub}
+        zone={sheetItem.kind === "ship" ? sheetItem.sub : undefined}
+        deepLink={deepLinkFor(sheetItem.kind, sheetItem.sub)}
+      />
+    )}
+    </>
   );
 };
 

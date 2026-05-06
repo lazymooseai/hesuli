@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      demand_feedback: {
+        Row: {
+          card_key: string
+          card_label: string | null
+          card_type: string
+          created_at: string
+          demand_level: string
+          expires_at: string
+          id: string
+          note: string | null
+          reported_by_device: string | null
+          zone: string | null
+        }
+        Insert: {
+          card_key: string
+          card_label?: string | null
+          card_type: string
+          created_at?: string
+          demand_level: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          reported_by_device?: string | null
+          zone?: string | null
+        }
+        Update: {
+          card_key?: string
+          card_label?: string | null
+          card_type?: string
+          created_at?: string
+          demand_level?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          reported_by_device?: string | null
+          zone?: string | null
+        }
+        Relationships: []
+      }
       dispatch_scans: {
         Row: {
           created_at: string

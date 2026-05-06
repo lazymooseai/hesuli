@@ -1,8 +1,12 @@
-import { Navigation, Plane, TrainFront, Ship, Trophy, CloudRain, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Navigation, Plane, TrainFront, Ship, Trophy, CloudRain, ExternalLink, Users } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 import { JackpotAlert } from "@/lib/types";
 import { openExternal } from "@/lib/openExternal";
 import { isLowTaxiDemandEvent } from "@/lib/eventDemandFilters";
+import DemandFeedbackSheet from "@/components/DemandFeedbackSheet";
+import { useDemandFeedback } from "@/hooks/useDemandFeedback";
+import { DEMAND_SHORT, DEMAND_COLOR, latestForCard } from "@/lib/demandFeedback";
 
 /* ── Map alert type + zone to a deep link ── */
 const ZONE_LINKS: Record<string, string> = {
@@ -52,6 +56,8 @@ function getZoneDeepLink(zone: string): string | null {
 
 const CommandCenter = () => {
   const { topAlert, hasJackpot, state } = useDashboard();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const feedback = useDemandFeedback();
 
   const isJackpot = topAlert?.level === "jackpot";
 
@@ -123,17 +129,16 @@ const CommandCenter = () => {
 
   const zone = topAlert?.zone ?? dynamicFallback.zone;
   const deepLink = getAlertDeepLink(topAlert) ?? getZoneDeepLink(zone);
+  const cardKey = `recommend:${zone.toLowerCase()}`;
+  const recentFeedback = latestForCard(feedback, cardKey);
 
-  const handleClick = () => {
-    if (deepLink) openExternal(deepLink);
-  };
+  const handleClick = () => setSheetOpen(true);
 
   return (
+    <>
     <div
       onClick={handleClick}
-      className={`mx-4 rounded-2xl border p-5 transition-all duration-500 ${
-        deepLink ? "cursor-pointer active:scale-[0.98]" : ""
-      } ${
+      className={`mx-4 rounded-2xl border p-5 transition-all duration-500 cursor-pointer active:scale-[0.98] ${
         isJackpot
           ? "border-destructive/60 bg-destructive/10 animate-flash-border glow-red"
           : hasJackpot
@@ -152,9 +157,7 @@ const CommandCenter = () => {
             {isJackpot ? "⚡ JACKPOT-ALUE" : "SUOSITUSALUE"}
           </span>
         </div>
-        {deepLink && (
-          <ExternalLink className="h-4 w-4 text-muted-foreground/50" />
-        )}
+        <Users className="h-4 w-4 text-muted-foreground/60" />
       </div>
 
       <h1
@@ -179,7 +182,23 @@ const CommandCenter = () => {
           <span>{dynamicFallback.reason}</span>
         </div>
       )}
+      {recentFeedback && (
+        <div className={`mt-3 inline-flex items-center gap-1 rounded-md border border-border bg-background/60 px-2 py-1 text-xs font-black uppercase tracking-wide ${DEMAND_COLOR[recentFeedback.demand_level]}`}>
+          <Users className="h-3 w-3" /> Kuljettaja: {DEMAND_SHORT[recentFeedback.demand_level]}
+        </div>
+      )}
     </div>
+    <DemandFeedbackSheet
+      open={sheetOpen}
+      onOpenChange={setSheetOpen}
+      cardKey={cardKey}
+      cardType="recommend"
+      title={zone}
+      subtitle={topAlert?.reason ?? dynamicFallback.reason}
+      zone={zone}
+      deepLink={deepLink}
+    />
+    </>
   );
 };
 

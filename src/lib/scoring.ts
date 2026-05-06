@@ -156,15 +156,20 @@ export function calculateOpportunityScore(state: DashboardState): JackpotAlert[]
 
     const minsUntilEnd = event.endsIn;
     const isPurkuhetki = minsUntilEnd <= 30 && minsUntilEnd >= 0;
+    const size = event.estimatedAttendance ?? event.capacity ?? 0;
+    const isLarge = size >= 2000;
 
-    if (isPurkuhetki) {
+    // Jackpot vain isoille tapahtumille (>= 2000 hlö) purkuhetkella.
+    // Pienemmat naytetaan korkeintaan 'high'-tasona — kuljettaja voi nostaa
+    // tason itse manuaalisesti yksityistilaisuuksien tapauksessa.
+    if (isPurkuhetki && isLarge) {
       alerts.push({
         level: "jackpot",
         zone: event.venue,
-        reason: `${event.name} paattyy ${minsUntilEnd} min paasta. Purkupiikki alkaa!`,
+        reason: `${event.name} (~${size.toLocaleString("fi-FI")} hlö) paattyy ${minsUntilEnd} min paasta. Purkupiikki!`,
         type: "event",
       });
-    } else if (event.soldOut) {
+    } else if (isPurkuhetki || event.soldOut) {
       alerts.push({
         level: "high",
         zone: event.venue,
@@ -175,11 +180,13 @@ export function calculateOpportunityScore(state: DashboardState): JackpotAlert[]
   }
 
   // ------------------------------------------------------------------
-  // Saakertoimen nosto: high -> jackpot kun saakerroin >= 1.5
+  // Saakertoimen nosto: high -> jackpot vain liikennehäiriö-tyyppisille
+  // (juna/laiva/sää). Tapahtumat eivat saa automaattista jackpot-tasoa
+  // pelkan saan perusteella — kayttaja paattaa.
   // ------------------------------------------------------------------
   if (weatherMultiplier >= 1.5) {
     for (const alert of alerts) {
-      if (alert.level === "high") {
+      if (alert.level === "high" && alert.type !== "event") {
         alert.level = "jackpot";
         alert.reason += ` (x${weatherMultiplier} saakerroin)`;
       }
