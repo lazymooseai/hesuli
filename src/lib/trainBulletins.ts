@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface TrainBulletin {
   id: string;
   trainNumber?: number;
+  trainNumbers?: number[];
   stations: string[];
   text: string;
   endValidity?: string;
