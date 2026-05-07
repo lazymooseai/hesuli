@@ -190,8 +190,6 @@ export async function fetchLiveTrains(station: TrainStation = "HKI"): Promise<Tr
   const results: TrainDelay[] = [];
 
   for (const train of trains) {
-    if (train.cancelled) continue;
-
     // Lentokenttäjunat (commuter I/P) ovat relevantteja vain ruuhka-aikoina
     const isAirport =
       train.trainCategory === "Commuter" &&
@@ -210,6 +208,9 @@ export async function fetchLiveTrains(station: TrainStation = "HKI"): Promise<Tr
     ) {
       continue;
     }
+
+    // Peruttuja näytetään vain kaukojunille / Z-junille (ei lentokenttäjunille)
+    if (train.cancelled && isAirport) continue;
 
     // Naytetaan vain Helsinki-suuntaiset junat kaikilla asemilla (HKI/PSL/TKL).
     // Helsingista lahtevat junat (esim. PSL nakee HKI->TPE junan "saapuvana")
@@ -252,7 +253,7 @@ export async function fetchLiveTrains(station: TrainStation = "HKI"): Promise<Tr
         ? new Date(arrival.actualTime)
         : scheduled;
 
-    const delayMinutes = Math.max(
+    const delayMinutes = train.cancelled ? 0 : Math.max(
       0,
       Math.round((estimate.getTime() - scheduled.getTime()) / 60000)
     );
@@ -278,6 +279,7 @@ export async function fetchLiveTrains(station: TrainStation = "HKI"): Promise<Tr
       origin,
       delayMinutes,
       arrivalTime,
+      cancelled: train.cancelled || undefined,
     } satisfies TrainDelay);
   }
 

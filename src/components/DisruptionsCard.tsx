@@ -1,6 +1,7 @@
-import { AlertTriangle, TrainFront, Plane, Ship, Bus, ExternalLink } from "lucide-react";
+import { AlertTriangle, TrainFront, Plane, Ship, Bus, ExternalLink, Megaphone } from "lucide-react";
 import { useDashboard } from "@/context/DashboardContext";
 import { useHslAlerts } from "@/lib/hsl";
+import { useTrainBulletins } from "@/lib/trainBulletins";
 import { openExternal } from "@/lib/openExternal";
 
 /**
@@ -14,6 +15,7 @@ import { openExternal } from "@/lib/openExternal";
 const DisruptionsCard = () => {
   const { state } = useDashboard();
   const { alerts } = useHslAlerts(60_000);
+  const { bulletins } = useTrainBulletins(120_000);
 
   const hslItems = alerts.map((a) => ({
     key: `hsl-${a.id}`,
@@ -25,16 +27,27 @@ const DisruptionsCard = () => {
   }));
 
   const trainItems = state.trainDelays
-    .filter((t) => t.delayMinutes >= 10)
+    .filter((t) => t.cancelled || t.delayMinutes >= 10)
     .slice(0, 5)
     .map((t) => ({
       key: `train-${t.id}`,
       icon: <TrainFront className="h-5 w-5" />,
-      label: "JUNA MYÖHÄSSÄ",
-      text: `${t.line} ${t.origin} +${t.delayMinutes} min (saap. ${t.arrivalTime})`,
-      level: t.delayMinutes >= 30 ? ("red" as const) : ("amber" as const),
+      label: t.cancelled ? "JUNA PERUTTU" : "JUNA MYÖHÄSSÄ",
+      text: t.cancelled
+        ? `${t.line} ${t.origin} (oli saap. ${t.arrivalTime})`
+        : `${t.line} ${t.origin} +${t.delayMinutes} min (saap. ${t.arrivalTime})`,
+      level: t.cancelled || t.delayMinutes >= 30 ? ("red" as const) : ("amber" as const),
       url: "https://junalahdot.fi/?station=HKI",
     }));
+
+  const bulletinItems = bulletins.slice(0, 5).map((b) => ({
+    key: `bulletin-${b.id}`,
+    icon: <Megaphone className="h-5 w-5" />,
+    label: "VR TIEDOTE",
+    text: b.trainNumber ? `Juna ${b.trainNumber}: ${b.text}` : b.text,
+    level: "amber" as const,
+    url: "https://www.vr.fi/asiakaspalvelu/poikkeustilanteet",
+  }));
 
   const flightItems = state.flights
     .filter((f) => f.delayMinutes >= 30)
@@ -62,7 +75,7 @@ const DisruptionsCard = () => {
       url: "https://averio.fi/laivat",
     }));
 
-  const items = [...hslItems, ...trainItems, ...flightItems, ...shipItems];
+  const items = [...hslItems, ...bulletinItems, ...trainItems, ...flightItems, ...shipItems];
 
   if (items.length === 0) {
     return (

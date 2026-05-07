@@ -13,6 +13,7 @@ export interface TrainDelay {
   arrivalTime: string;
   capacity?: number;        // Istumapaikkamäärä: oikea (compositions) tai arvio (tyyppi)
   capacitySource?: "real" | "estimate";  // "real" = Digitraffic, "estimate" = tyyppiarvio
+  cancelled?: boolean;       // Junaa ei aja - näytetään PERUTTU-tagilla
 }
 
 export interface ShipArrival {
