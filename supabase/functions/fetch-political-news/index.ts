@@ -322,6 +322,138 @@ Käytä ISO 8601 -aikoja Helsinki-aikavyöhykkeessä (+03:00 kesä-, +02:00 talv
   return events;
 }
 
+// ---------------------------------------------------------------------------
+// Tasavallan presidentin virallinen kalenteri
+//
+// Lähde: presidentti.fi WordPress REST API custom post type "event".
+// Endpoint palauttaa viikkokohtaiset "Viikko N – Tasavallan presidentin
+// ohjelma" -postaukset. Excerptissä on listattu päivä päivältä:
+//   "Maanantai 4.5. Virallinen vierailu Tšekin tasavaltaan"
+//   "Torstai 7.5. Saksan liittopresidentti Frank-Walter Steinmeierin työvierailu"
+//
+// Pilkomme excerpt-tekstin Gemini-mallilla yksittäisiksi päivätapahtumiksi
+// (ISO-aika + sijainti + VIP-taso). Näin saamme realtime-tiedon
+// valtiovierailuista ja muista presidentin julkisista tilaisuuksista,
+// joita Wikidata ei sisällä.
+// ---------------------------------------------------------------------------
+
+interface WpEvent {
+  id: number;
+  link: string;
+  title?: { rendered?: string };
+  excerpt?: { rendered?: string };
+  meta?: { event_start_date?: string; event_end_date?: string };
+}
+
+interface PresAiItem {
+  date: string; // YYYY-MM-DD
+  start_time?: string; // HH:MM
+  end_time?: string;
+  title: string;
+  location?: string;
+  vip_level?: string;
+  category?: string;
+  is_helsinki?: boolean;
+}
+
+function stripHtml(s: string): string {
+  return s.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+}
+
+async function fetchPresidentialCalendar(): Promise<PoliticalEv[]> {
+  // Hae 4 viimeisintä viikkopostausta (kattaa noin kuukauden tulevat + menneet)
+  const url = "https://www.presidentti.fi/wp-json/wp/v2/event?per_page=4&_fields=id,link,title,excerpt,meta";
+  const res = await fetch(url, { headers: { "User-Agent": "HelsinkiTaxiPulse/1.0" } });
+  if (!res.ok) {
+    console.warn("presidentti.fi event API", res.status);
+    return [];
+  }
+  const wpEvents = await res.json() as WpEvent[];
+  if (!Array.isArray(wpEvents) || wpEvents.length === 0) return [];
+
+  const out: PoliticalEv[] = [];
+  const sourceLink = wpEvents[0]?.link ?? "https://www.presidentti.fi/ajankohtaista/kalenteri/";
+
+  // Suomalaiset päivien nimet → Date.getDay()-arvot (0=su)
+  const dayMap: Record<string, number> = {
+    "sunnuntai": 0, "maanantai": 1, "tiistai": 2, "keskiviikko": 3,
+    "torstai": 4, "perjantai": 5, "lauantai": 6,
+  };
+  const dayRegex = /(Maanantai|Tiistai|Keskiviikko|Torstai|Perjantai|Lauantai|Sunnuntai)\s*(\d{1,2})\.(\d{1,2})\.\s*([^]+?)(?=(?:Maanantai|Tiistai|Keskiviikko|Torstai|Perjantai|Lauantai|Sunnuntai)\s*\d|$)/giu;
+
+  for (const w of wpEvents) {
+    const excerpt = stripHtml(w.excerpt?.rendered ?? "");
+    if (!excerpt) continue;
+    const weekStart = w.meta?.event_start_date ? new Date(w.meta.event_start_date) : null;
+    const baseYear = weekStart ? weekStart.getFullYear() : new Date().getFullYear();
+
+    let m: RegExpExecArray | null;
+    while ((m = dayRegex.exec(excerpt)) !== null) {
+      const dayName = m[1].toLowerCase();
+      const day = parseInt(m[2], 10);
+      const month = parseInt(m[3], 10);
+      const desc = m[4].trim();
+      if (!day || !month || !desc) continue;
+
+      // Vuosi: jos kuukausi paljon viikon alku-kuukautta pienempi → seuraava vuosi
+      let year = baseYear;
+      if (weekStart && month < weekStart.getMonth() + 1 - 2) year = baseYear + 1;
+
+      const ymd = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const tz = month >= 4 && month <= 10 ? "+03:00" : "+02:00";
+      const startIso = `${ymd}T12:00:00${tz}`;
+      const startMs = Date.parse(startIso);
+      if (!Number.isFinite(startMs)) continue;
+      if (startMs < Date.now() - 12 * 3600_000) continue;
+      if (startMs > Date.now() + 21 * 24 * 3600_000) continue;
+
+      // Suodata: presidentin pelkät ulkomaanmatkat (ei tuo kysyntää Helsinkiin)
+      const lower = desc.toLowerCase();
+      const isAbroad = /(ulkomaa|virallinen vierailu (?!suomee)|työvierailu (?!suomee)|tukholma|ottawa|jordani|egypti|tšekki|tsekki|kanada|berlin|brysseli|pariisi|new york|washington|riika|tallinna|oslo)/i
+        .test(lower);
+      const isHelsinki = /(presidentinlinna|säätytal|saatytal|valtioneuvost|mäntyniemi|mantyniemi|helsinki|presidentin esittely|vapputerveh|valtiovierailu suomeen|liittopresidentti|pääministeri|paaministeri|kuningas|työvierail|tyovierail.*suome|virallinen vierailu suomee)/i
+        .test(lower);
+      if (isAbroad && !isHelsinki) continue;
+      // Lyhyt presidentin ohjelma jossa ei selvästi tapahdu Helsingissä — ohita
+      if (!isHelsinki && !/suome/i.test(lower)) continue;
+
+      // Päättele sijainti
+      let location = "Helsinki";
+      if (/presidentinlinna/i.test(lower)) location = "Presidentinlinna, Helsinki";
+      else if (/säätytal|saatytal/i.test(lower)) location = "Säätytalo, Helsinki";
+      else if (/valtioneuvost/i.test(lower)) location = "Valtioneuvoston linna, Helsinki";
+      else if (/mäntyniemi|mantyniemi/i.test(lower)) location = "Mäntyniemi, Helsinki";
+
+      // Päättele VIP / kategoria
+      const isStateVisit = /(valtiovierailu|liittopresidentti|työvierailu|tyovierailu|kuningas|presidentin vierailu|pääministeri|paaministeri).*?(suome|helsinki|presidentinlinna)|saksan liittopresidentti|viron presidentti|ruotsin kuningas/i.test(lower);
+      const category = isStateVisit ? "valtiovierailu" : "presidentti";
+      const vip = isStateVisit ? "kansainvalinen" : "presidentti";
+
+      // Lyhennä otsikko: poista loppuosan päivämäärävälit kuten "4.–5.5."
+      const cleanTitle = desc.replace(/\s*\d{1,2}\.[–\-]\d{1,2}\.\d{0,2}\.?$/u, "").trim();
+      const slug = cleanTitle.toLowerCase().replace(/[^a-zåäö0-9]+/g, "-").slice(0, 50);
+      out.push({
+        external_key: `presidentti-${ymd}-${slug}`,
+        title: cleanTitle.length > 120 ? cleanTitle.slice(0, 117) + "..." : cleanTitle,
+        description: location,
+        location,
+        category,
+        vip_level: vip,
+        start_iso: startIso,
+        end_iso: undefined,
+        predicted_end_iso: new Date(startMs + 3 * 3600_000).toISOString(),
+        source_url: sourceLink,
+        confidence: 0.9,
+        reasoning: `Presidentti.fi viikko-ohjelma (${dayName})`,
+      });
+    }
+  }
+  // Dedupe by external_key
+  const dedup = new Map<string, PoliticalEv>();
+  for (const e of out) dedup.set(e.external_key, e);
+  return [...dedup.values()];
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -347,8 +479,13 @@ Deno.serve(async (req) => {
       console.warn("Social agent fail:", e instanceof Error ? e.message : e);
       return [] as PoliticalEv[];
     });
-    const events = [...wd, ...socialEvents];
-    console.log(`fetch-political-news: wikidata=${wd.length} social=${socialEvents.length}`);
+    // 3) Tasavallan presidentin virallinen kalenteri (presidentti.fi WP-API)
+    const presEvents = await fetchPresidentialCalendar().catch((e) => {
+      console.warn("Presidentti calendar fail:", e instanceof Error ? e.message : e);
+      return [] as PoliticalEv[];
+    });
+    const events = [...wd, ...socialEvents, ...presEvents];
+    console.log(`fetch-political-news: wikidata=${wd.length} social=${socialEvents.length} presidentti=${presEvents.length}`);
 
     // Siivoa vanhat eduskunta-cal -rivit kannasta (lähteen poiston jälkeen)
     await supabase
@@ -382,6 +519,8 @@ Deno.serve(async (req) => {
           ? "eduskunta-cal"
           : ev.external_key.startsWith("social-")
           ? "social-agent"
+          : ev.external_key.startsWith("presidentti-")
+          ? "presidentti-fi"
           : "wikidata",
         confidence: ev.confidence ?? null,
         reasoning: ev.reasoning ?? null,

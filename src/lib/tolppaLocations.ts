@@ -268,7 +268,10 @@ const VENUE_TOLPPA_OVERRIDES: Record<string, string> = {
   "säätytalo": "Aleksanterinkatu",
   "valtioneuvoston linna": "Aleksanterinkatu",
   "smolna": "Aleksanterinkatu",
-  "presidentinlinna": "Kauppatori",
+  // Käyttäjän vahvistama: Presidentinlinnan tilaisuudet → tolppa 6 Aleksanterinkatu
+  // (Senaatintorin laita), ei Kauppatori — vieraat poistuvat Aleksanterinkadun
+  // puolelta valtiovierailujen jälkeen.
+  "presidentinlinna": "Aleksanterinkatu",
   "eduskuntatalo": "Museokatu",
   "eduskunta": "Museokatu",
   "pikkuparlamentti": "Pikkuparlamentti",
@@ -342,7 +345,9 @@ const VENUE_TOLPPA_OVERRIDES: Record<string, string> = {
   "messukeskus": "Pasila",
   "messukeskus helsinki": "Pasila",
   // Suurlähetystöt-keskusta
-  "presidentin kanslia": "Kauppatori",
+  "presidentin kanslia": "Aleksanterinkatu",
+  "mantyniemi": "Meilahti",
+  "mäntyniemi": "Meilahti",
 };
 
 /**
