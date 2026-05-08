@@ -361,12 +361,6 @@ function stripHtml(s: string): string {
 }
 
 async function fetchPresidentialCalendar(): Promise<PoliticalEv[]> {
-  const apiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) {
-    console.warn("Presidentti.fi: LOVABLE_API_KEY puuttuu");
-    return [];
-  }
-
   // Hae 4 viimeisintä viikkopostausta (kattaa noin kuukauden tulevat + menneet)
   const url = "https://www.presidentti.fi/wp-json/wp/v2/event?per_page=4&_fields=id,link,title,excerpt,meta";
   const res = await fetch(url, { headers: { "User-Agent": "HelsinkiTaxiPulse/1.0" } });
@@ -377,113 +371,87 @@ async function fetchPresidentialCalendar(): Promise<PoliticalEv[]> {
   const wpEvents = await res.json() as WpEvent[];
   if (!Array.isArray(wpEvents) || wpEvents.length === 0) return [];
 
-  // Kerää viikkojen excerptit yhdeksi syötteeksi mallille
-  const blocks = wpEvents.map((e) => {
-    const title = stripHtml(e.title?.rendered ?? "");
-    const excerpt = stripHtml(e.excerpt?.rendered ?? "");
-    const start = e.meta?.event_start_date ?? "";
-    return `### ${title}\nViikon alku: ${start}\nLähde: ${e.link}\n${excerpt}`;
-  }).join("\n\n");
-
-  const today = new Date().toISOString().slice(0, 10);
-  const prompt = `Olet Helsingin taksinkuljettajan tilannepäivystäjä. Alla on tasavallan
-presidentin viralliset viikko-ohjelmat suomeksi. Pilko teksti
-yksittäisiksi päivätapahtumiksi.
-
-Tänään on ${today}.
-
-Säännöt:
-- Tunnista päivämäärä päivän nimestä (Maanantai/Tiistai/...) ja viikon alkupäivästä.
-- Jos rivi mainitsee päivävälin "4.–5.5.", luo erilliset rivit jokaiselle
-  päivälle aikavälillä jos tapahtuma toistuu.
-- Sisällytä VAIN tapahtumat jotka tapahtuvat Helsingissä TAI joissa korkea
-  VIP-vieras saapuu/lähtee Helsingistä (esim. valtiovierailut Suomeen,
-  vastaanotot Presidentinlinnassa, Säätytalolla, Mäntyniemessä,
-  Valtioneuvostossa). Älä sisällytä presidentin ulkomaanmatkoja jos ne
-  ovat kokonaan ulkomailla — ne eivät tuo Helsingin kysyntää.
-- Päättele sijainti tekstistä:
-    "Presidentinlinna" → "Presidentinlinna, Helsinki"
-    "Säätytalo" → "Säätytalo, Helsinki"
-    "valtioneuvosto" / "valtioneuvoston linna" → "Valtioneuvoston linna, Helsinki"
-    "Mäntyniemi" → "Mäntyniemi, Helsinki"
-    Muuten "Helsinki".
-- Jos kellonaikaa ei mainita, jätä start_time tyhjäksi (tulkitsemme klo 12:00).
-- VIP: "presidentti" jos Suomen presidentti läsnä; "kansainvalinen" jos
-  ulkomainen valtionpäämies/liittopresidentti/pääministeri vierailulla.
-- Kategoria: "valtiovierailu" jos ulkomainen valtionpäämies; muuten "presidentti".
-
-Palauta PUHDAS JSON-taulukko (ei koodiblokkia). Jokainen alkio:
-{"date":"YYYY-MM-DD","start_time":"HH:MM","end_time":"HH:MM","title":"...","location":"...","vip_level":"presidentti|kansainvalinen","category":"valtiovierailu|presidentti","is_helsinki":true}
-
-Jos mitään Helsinkiin liittyvää ei löydy, palauta [].
-
-SYÖTE:
-${blocks}`;
-
-  const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: "Vastaa aina puhtaalla JSON-taulukolla ilman koodiblokkia." },
-        { role: "user", content: prompt },
-      ],
-    }),
-  });
-  if (!aiRes.ok) {
-    console.warn("Presidentti AI", aiRes.status, await aiRes.text().catch(() => ""));
-    return [];
-  }
-  const aiData = await aiRes.json() as { choices?: Array<{ message?: { content?: string } }> };
-  const raw = aiData.choices?.[0]?.message?.content?.trim() ?? "";
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-  let items: PresAiItem[] = [];
-  try {
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed)) items = parsed as PresAiItem[];
-  } catch (e) {
-    console.warn("Presidentti JSON parse fail:", e instanceof Error ? e.message : e, "raw:", raw.slice(0, 300));
-    return [];
-  }
-
-  const sourceLink = wpEvents[0]?.link ?? "https://www.presidentti.fi/ajankohtaista/kalenteri/";
   const out: PoliticalEv[] = [];
-  for (const it of items) {
-    if (!it.date || !it.title) continue;
-    if (it.is_helsinki === false) continue;
-    // Rakenna start ISO Helsinki-aikavyöhykkeessä
-    const time = it.start_time && /^\d{1,2}:\d{2}$/.test(it.start_time) ? it.start_time.padStart(5, "0") : "12:00";
-    const endTime = it.end_time && /^\d{1,2}:\d{2}$/.test(it.end_time) ? it.end_time.padStart(5, "0") : null;
-    // Helsinki UTC offset: kesäaika +03:00, talviaika +02:00. Otetaan kompromissi
-    // päättelyllä: huhti–lokakuu = +03, muut +02.
-    const month = parseInt(it.date.slice(5, 7), 10);
-    const tz = month >= 4 && month <= 10 ? "+03:00" : "+02:00";
-    const startIso = `${it.date}T${time}:00${tz}`;
-    const startMs = Date.parse(startIso);
-    if (!Number.isFinite(startMs)) continue;
-    if (startMs < Date.now() - 12 * 3600_000) continue; // ohita >12h vanhat
-    if (startMs > Date.now() + 21 * 24 * 3600_000) continue;
-    const endIso = endTime ? `${it.date}T${endTime}:00${tz}` : undefined;
-    const predictedEnd = endIso ?? new Date(startMs + 3 * 3600_000).toISOString();
+  const sourceLink = wpEvents[0]?.link ?? "https://www.presidentti.fi/ajankohtaista/kalenteri/";
 
-    const slug = it.title.toLowerCase().replace(/[^a-zåäö0-9]+/g, "-").slice(0, 50);
-    out.push({
-      external_key: `presidentti-${it.date}-${slug}`,
-      title: it.title,
-      description: it.location,
-      location: it.location || "Helsinki",
-      category: it.category || "presidentti",
-      vip_level: it.vip_level || "presidentti",
-      start_iso: startIso,
-      end_iso: endIso,
-      predicted_end_iso: predictedEnd,
-      source_url: sourceLink,
-      confidence: 0.95,
-      reasoning: "Presidentti.fi virallinen viikko-ohjelma",
-    });
+  // Suomalaiset päivien nimet → Date.getDay()-arvot (0=su)
+  const dayMap: Record<string, number> = {
+    "sunnuntai": 0, "maanantai": 1, "tiistai": 2, "keskiviikko": 3,
+    "torstai": 4, "perjantai": 5, "lauantai": 6,
+  };
+  const dayRegex = /(Maanantai|Tiistai|Keskiviikko|Torstai|Perjantai|Lauantai|Sunnuntai)\s*(\d{1,2})\.(\d{1,2})\.\s*([^]+?)(?=(?:Maanantai|Tiistai|Keskiviikko|Torstai|Perjantai|Lauantai|Sunnuntai)\s*\d|$)/giu;
+
+  for (const w of wpEvents) {
+    const excerpt = stripHtml(w.excerpt?.rendered ?? "");
+    if (!excerpt) continue;
+    const weekStart = w.meta?.event_start_date ? new Date(w.meta.event_start_date) : null;
+    const baseYear = weekStart ? weekStart.getFullYear() : new Date().getFullYear();
+
+    let m: RegExpExecArray | null;
+    while ((m = dayRegex.exec(excerpt)) !== null) {
+      const dayName = m[1].toLowerCase();
+      const day = parseInt(m[2], 10);
+      const month = parseInt(m[3], 10);
+      const desc = m[4].trim();
+      if (!day || !month || !desc) continue;
+
+      // Vuosi: jos kuukausi paljon viikon alku-kuukautta pienempi → seuraava vuosi
+      let year = baseYear;
+      if (weekStart && month < weekStart.getMonth() + 1 - 2) year = baseYear + 1;
+
+      const ymd = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const tz = month >= 4 && month <= 10 ? "+03:00" : "+02:00";
+      const startIso = `${ymd}T12:00:00${tz}`;
+      const startMs = Date.parse(startIso);
+      if (!Number.isFinite(startMs)) continue;
+      if (startMs < Date.now() - 12 * 3600_000) continue;
+      if (startMs > Date.now() + 21 * 24 * 3600_000) continue;
+
+      // Suodata: presidentin pelkät ulkomaanmatkat (ei tuo kysyntää Helsinkiin)
+      const lower = desc.toLowerCase();
+      const isAbroad = /(ulkomaa|virallinen vierailu (?!suomee)|työvierailu (?!suomee)|tukholma|ottawa|jordani|egypti|tšekki|tsekki|kanada|berlin|brysseli|pariisi|new york|washington|riika|tallinna|oslo)/i
+        .test(lower);
+      const isHelsinki = /(presidentinlinna|säätytal|saatytal|valtioneuvost|mäntyniemi|mantyniemi|helsinki|presidentin esittely|vapputerveh|valtiovierailu suomeen|liittopresidentti|pääministeri|paaministeri|kuningas|työvierail|tyovierail.*suome|virallinen vierailu suomee)/i
+        .test(lower);
+      if (isAbroad && !isHelsinki) continue;
+      // Lyhyt presidentin ohjelma jossa ei selvästi tapahdu Helsingissä — ohita
+      if (!isHelsinki && !/suome/i.test(lower)) continue;
+
+      // Päättele sijainti
+      let location = "Helsinki";
+      if (/presidentinlinna/i.test(lower)) location = "Presidentinlinna, Helsinki";
+      else if (/säätytal|saatytal/i.test(lower)) location = "Säätytalo, Helsinki";
+      else if (/valtioneuvost/i.test(lower)) location = "Valtioneuvoston linna, Helsinki";
+      else if (/mäntyniemi|mantyniemi/i.test(lower)) location = "Mäntyniemi, Helsinki";
+
+      // Päättele VIP / kategoria
+      const isStateVisit = /(valtiovierailu|liittopresidentti|työvierailu|tyovierailu|kuningas|presidentin vierailu|pääministeri|paaministeri).*?(suome|helsinki|presidentinlinna)|saksan liittopresidentti|viron presidentti|ruotsin kuningas/i.test(lower);
+      const category = isStateVisit ? "valtiovierailu" : "presidentti";
+      const vip = isStateVisit ? "kansainvalinen" : "presidentti";
+
+      // Lyhennä otsikko: poista loppuosan päivämäärävälit kuten "4.–5.5."
+      const cleanTitle = desc.replace(/\s*\d{1,2}\.[–\-]\d{1,2}\.\d{0,2}\.?$/u, "").trim();
+      const slug = cleanTitle.toLowerCase().replace(/[^a-zåäö0-9]+/g, "-").slice(0, 50);
+      out.push({
+        external_key: `presidentti-${ymd}-${slug}`,
+        title: cleanTitle.length > 120 ? cleanTitle.slice(0, 117) + "..." : cleanTitle,
+        description: location,
+        location,
+        category,
+        vip_level: vip,
+        start_iso: startIso,
+        end_iso: undefined,
+        predicted_end_iso: new Date(startMs + 3 * 3600_000).toISOString(),
+        source_url: sourceLink,
+        confidence: 0.9,
+        reasoning: `Presidentti.fi viikko-ohjelma (${dayName})`,
+      });
+    }
   }
-  return out;
+  // Dedupe by external_key
+  const dedup = new Map<string, PoliticalEv>();
+  for (const e of out) dedup.set(e.external_key, e);
+  return [...dedup.values()];
 }
 
 Deno.serve(async (req) => {
