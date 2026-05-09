@@ -1,10 +1,12 @@
 import EventsTimeline from "@/components/EventsTimeline";
 import DispatchLiveCard from "@/components/DispatchLiveCard";
 import SuggestionButton from "@/components/SuggestionButton";
+import { TripHeatmap } from "@/components/TripHeatmap";
 
 const SapinaTab = () => {
   return (
     <div className="px-4 pt-2 pb-6 space-y-6">
+
       <section aria-label="Tapahtumat">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
@@ -24,6 +26,17 @@ const SapinaTab = () => {
         </div>
         <DispatchLiveCard />
       </section>
+
+      <section aria-label="Kyyntiheatmap">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            Kyyntiheatmap
+          </h2>
+          <SuggestionButton feature="Säpinä / Kyyntiheatmap" context="Viikonpäivä x tunti -matriisi, EUR/h historiadata" />
+        </div>
+        <TripHeatmap />
+      </section>
+
     </div>
   );
 };

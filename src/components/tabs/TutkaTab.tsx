@@ -3,10 +3,22 @@ import JackpotAlert from "@/components/JackpotAlert";
 import NextArrivalsCarousel from "@/components/NextArrivalsCarousel";
 import SuggestionButton from "@/components/SuggestionButton";
 import DisruptionsCard from "@/components/DisruptionsCard";
+import { EtaSniperCard } from "@/components/EtaSniperCard";
 
 const TutkaTab = () => {
   return (
     <div className="px-4 pt-2 pb-6 space-y-6">
+
+      <section aria-label="ETA-Sniper">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            ETA-Sniper
+          </h2>
+          <SuggestionButton feature="Tutka / ETA-Sniper" context="Kohde-ehdotukset, matka-aika, tuntiansio" />
+        </div>
+        <EtaSniperCard className="mb-1" />
+      </section>
+
       <section aria-label="Suositusalue">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
@@ -39,6 +51,7 @@ const TutkaTab = () => {
         </div>
         <DisruptionsCard />
       </section>
+
     </div>
   );
 };
