@@ -142,18 +142,18 @@ Deno.serve(async (req) => {
         ? nearby.reduce((s, t) => s + Number(t.duration_min ?? 12), 0) / tripCount
         : 12
 
-      // Tolppatodennäköisyys: skaalataan 0..1 logaritmisesti
-      const rankProb = Math.min(1, Math.log10(1 + tripCount) / 1.5)
+      // Tolppatodennäköisyys: skaalataan 0..0.9 logaritmisesti (max 90 %)
+      const rankProb = Math.min(0.9, Math.log10(1 + tripCount) / 1.5)
 
-      // Tuntiansio (brutto): oletetaan että saat avgFare per kyyti, kyyti kestää avgDur min
-      // ja että odottelu = tMin/2. Tämä on karkea heuristiikka.
-      const cycleMin = Math.max(15, tMin + avgDur + 5)
-      const eurHGross = tripCount > 0 ? (avgFare * 60) / cycleMin * weatherMult : 0
+      // Tuntiansio (brutto): avg_fare / ((avg_duration + 20 min) / 60)
+      // +20 min sisältää odotuksen tolpalla ja tyhjäajon seuraavalle keikalle.
+      const cycleHours = (avgDur + 20) / 60
+      const eurHGross = tripCount > 0 ? (avgFare / cycleHours) * weatherMult : 0
       const eurHNet = Math.max(0, eurHGross - FUEL_COST * (tMin / 60) * 30)
 
       let verdict: 'OPTIMAALINEN' | 'KOHTALAINEN' | 'RISKI' = 'RISKI'
-      if (eurHNet >= 45 && rankProb >= 0.5) verdict = 'OPTIMAALINEN'
-      else if (eurHNet >= 25 || rankProb >= 0.3) verdict = 'KOHTALAINEN'
+      if (rankProb >= 0.75 && eurHNet >= 45) verdict = 'OPTIMAALINEN'
+      else if (rankProb >= 0.55 || eurHNet >= 30) verdict = 'KOHTALAINEN'
 
       const arrivalTime = new Date(Date.now() + tMin * 60 * 1000).toISOString()
 
