@@ -114,6 +114,8 @@ export interface SportsEvent {
   endsIn: number;             // Min ennen paattymista (negatiivinen jos jo loppunut)
   demandTag: string;
   demandLevel: "red" | "amber" | "green";
+  startIso?: string;
+  endIso?: string;
 }
 
 export interface DashboardState {
