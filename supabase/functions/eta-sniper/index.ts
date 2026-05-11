@@ -1,6 +1,6 @@
 // =============================================================================
-// supabase/functions/eta-sniper/index.ts
-// ETA-Sniper v2 -- korjattu start_time-pohjaiseksi, oikea eurHNet-kaava
+// supabase/functions/eta-sniper/index.ts  v3
+// GPS-sijaintiin perustuva sadesuodatus (radius_km)
 // =============================================================================
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -42,6 +42,10 @@ const TOLPAT: Tolppa[] = [
   { id: 93,  name: 'Tikkurila asema',             lat: 60.2937, lon: 25.0440, zone: 'Vantaa' },
   { id: 94,  name: 'Leppaavaara asema',           lat: 60.2194, lon: 24.8118, zone: 'Espoo' },
   { id: 95,  name: 'Keilaniemi',                  lat: 60.1849, lon: 24.8205, zone: 'Espoo' },
+  { id: 106, name: 'Itakeskus',                   lat: 60.2100, lon: 25.0780, zone: 'Helsinki ita' },
+  { id: 107, name: 'Herttoniemi asema',           lat: 60.2063, lon: 25.0280, zone: 'Helsinki ita' },
+  { id: 108, name: 'Vuosaari satama',             lat: 60.2090, lon: 25.1429, zone: 'Helsinki ita' },
+  { id: 109, name: 'Mellunmaki',                  lat: 60.2360, lon: 25.1157, zone: 'Helsinki ita' },
 ]
 
 function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -96,14 +100,19 @@ Deno.serve(async (req) => {
     )
 
     const body = await req.json().catch(() => ({}))
-    const { current_lat = 60.1699, current_lon = 24.9384, travel_minutes } = body
+    const {
+      current_lat  = 60.1699,
+      current_lon  = 24.9384,
+      travel_minutes,
+      radius_km    = 10,       // Haku-sade km -- tolpat taman sateen sisalla
+    } = body
 
     const now = new Date()
     const helsinkiNow = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }))
     const hour = helsinkiNow.getHours()
     const isWeekend = helsinkiNow.getDay() === 0 || helsinkiNow.getDay() === 6
 
-    // Saa (best-effort)
+    // Saatiedot
     let weatherMult = 1.0
     try {
       const wResp = await fetch(
@@ -120,18 +129,24 @@ Deno.serve(async (req) => {
       }
     } catch (_) {}
 
-    // Historiadata kaytetaan start_time-saraketta (oikea rakenne)
+    // Suodata tolpat sateen mukaan
+    const tolpatInRadius = TOLPAT.filter(
+      (tl) => haversineKm(current_lat, current_lon, tl.lat, tl.lon) <= radius_km,
+    )
+
+    // Jos radius ei kata yhtaan tolppaa, laajennetaan 25 km:iin automaattisesti
+    const activeTolpat = tolpatInRadius.length >= 2
+      ? tolpatInRadius
+      : TOLPAT.filter((tl) => haversineKm(current_lat, current_lon, tl.lat, tl.lon) <= 25)
+
+    // Historiadata start_time-pohjaisesti
     const hourLow  = (hour + 23) % 24
     const hourHigh = (hour + 1) % 24
 
     interface TripRow {
-      start_lat: number | null
-      start_lon: number | null
-      fare_eur: number | null
-      duration_min: number | null
-      start_time: string | null
+      start_lat: number | null; start_lon: number | null
+      fare_eur: number | null; duration_min: number | null; start_time: string | null
     }
-
     let trips: TripRow[] = []
     try {
       const { data } = await supabase
@@ -142,14 +157,11 @@ Deno.serve(async (req) => {
         .gt('fare_eur', 0)
         .gt('duration_min', 0)
         .limit(8000)
-
       if (data) {
         trips = data.filter((t) => {
           if (!t.start_time) return false
           const d = new Date(t.start_time)
-          const h = new Date(
-            d.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' }),
-          ).getHours()
+          const h = new Date(d.toLocaleString('en-US', { timeZone: 'Europe/Helsinki' })).getHours()
           const isWe = d.getDay() === 0 || d.getDay() === 6
           const inWindow = hourLow <= hourHigh
             ? h >= hourLow && h <= hourHigh
@@ -159,45 +171,33 @@ Deno.serve(async (req) => {
       }
     } catch (_) {}
 
-    const FUEL_COST_PER_HOUR = 2.5
-    const RADIUS_KM = 1.0
+    const FUEL_COST  = 2.5
+    const HIST_RADIUS = 1.0
 
-    const targets = TOLPAT.map((tl) => {
+    const targets = activeTolpat.map((tl) => {
+      const distFromDriver = haversineKm(current_lat, current_lon, tl.lat, tl.lon)
       const tMin = travel_minutes !== undefined
         ? Math.ceil(travel_minutes)
         : calcTravelMinutes(current_lat, current_lon, tl.lat, tl.lon, hour)
 
       const nearby = trips.filter(
-        (t) =>
-          t.start_lat != null &&
-          t.start_lon != null &&
-          haversineKm(t.start_lat!, t.start_lon!, tl.lat, tl.lon) <= RADIUS_KM,
+        (t) => t.start_lat != null && t.start_lon != null &&
+          haversineKm(t.start_lat!, t.start_lon!, tl.lat, tl.lon) <= HIST_RADIUS,
       )
-
       const tripCount = nearby.length
-
       const avgFare = tripCount > 0
-        ? nearby.reduce((s, t) => s + Number(t.fare_eur ?? 0), 0) / tripCount
-        : 0
-
+        ? nearby.reduce((s, t) => s + Number(t.fare_eur ?? 0), 0) / tripCount : 0
       const avgDur = tripCount > 0
-        ? nearby.reduce((s, t) => s + Number(t.duration_min ?? 15), 0) / tripCount
-        : 15
+        ? nearby.reduce((s, t) => s + Number(t.duration_min ?? 15), 0) / tripCount : 15
 
-      // rank_prob: logaritminen skaala 0..0.90
-      // 10 kyytiä ~0.35 | 50 kyytiä ~0.57 | 200 kyytiä ~0.76
+      // rank_prob logaritminen 0..0.90
       const rankProb = Math.min(0.90, Math.log10(1 + tripCount) / 1.5)
 
-      // Tuntiansio (brutto):
-      //   avg_fare / ((avg_duration + 20 min) / 60)
-      //   Datasta: 33.33 EUR / ((14.9 + 20) / 60) = ~57 EUR/h maksimi
+      // Tuntiansio: fare / ((kesto + 20 min odotus) / 60)
       const cycleHours = (avgDur + 20.0) / 60.0
       const eurHGross = tripCount > 0
-        ? Math.round((avgFare / cycleHours) * weatherMult)
-        : 0
-
-      // Netto = brutto - kiintea polttoainekulu 2.50 EUR/h
-      const eurHNet = Math.max(0, eurHGross - FUEL_COST_PER_HOUR)
+        ? Math.round((avgFare / cycleHours) * weatherMult) : 0
+      const eurHNet = Math.max(0, eurHGross - FUEL_COST)
 
       let verdict: 'OPTIMAALINEN' | 'KOHTALAINEN' | 'RISKI' = 'RISKI'
       if (rankProb >= 0.55 && eurHNet >= 45) verdict = 'OPTIMAALINEN'
@@ -206,11 +206,10 @@ Deno.serve(async (req) => {
       return {
         tolppa_id: tl.id,
         tolppa_name: tl.name,
-        lat: tl.lat,
-        lon: tl.lon,
-        zone: tl.zone,
+        lat: tl.lat, lon: tl.lon, zone: tl.zone,
         arrival_time: new Date(Date.now() + tMin * 60 * 1000).toISOString(),
         travel_minutes: tMin,
+        dist_from_driver_km: Math.round(distFromDriver * 10) / 10,
         trip_count_hist: tripCount,
         avg_fare_hist: Math.round(avgFare * 100) / 100,
         eur_h_gross: eurHGross,
@@ -238,6 +237,8 @@ Deno.serve(async (req) => {
           generated_at: new Date().toISOString(),
           source_lat: current_lat,
           source_lon: current_lon,
+          radius_km,
+          tolpat_in_radius: activeTolpat.length,
           history_trips_in_window: trips.length,
         },
       }),
