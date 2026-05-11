@@ -62,6 +62,7 @@ export interface EventInfo {
   estimatedAttendance?: number; // Arvio yleisomaarasta
   loadFactor?: number;    // 0..1 - lipunmyyntiaste
   availabilityNote?: string; // Vapaa kuvaus tilanteesta tai AI-arvion peruste
+  infoUrl?: string;
 }
 
 export interface WeatherData {
