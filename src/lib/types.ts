@@ -33,6 +33,9 @@ export interface TrainDelay {
    * kaukojunatyypit pois hylkayksen sijaan).
    */
   trainCategory?: TrainCategory;
+  cancelled?: boolean;
+  capacity?: number;
+  capacitySource?: string;
 }
 
 export interface ShipArrival {
@@ -59,6 +62,7 @@ export interface EventInfo {
   estimatedAttendance?: number; // Arvio yleisomaarasta
   loadFactor?: number;    // 0..1 - lipunmyyntiaste
   availabilityNote?: string; // Vapaa kuvaus tilanteesta tai AI-arvion peruste
+  infoUrl?: string;
 }
 
 export interface WeatherData {
@@ -110,6 +114,8 @@ export interface SportsEvent {
   endsIn: number;             // Min ennen paattymista (negatiivinen jos jo loppunut)
   demandTag: string;
   demandLevel: "red" | "amber" | "green";
+  startIso?: string;
+  endIso?: string;
 }
 
 export interface DashboardState {
