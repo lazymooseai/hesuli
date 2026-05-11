@@ -57,7 +57,7 @@ function eurHToColor(value: number, max: number): string {
 // Hakufunktio
 // ----------------------------------------------------------------------------
 async function fetchHeatmap(): Promise<HeatmapRow[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('trip_heatmap')
     .select('day_of_week, hour_of_day, pickup_zone, trip_count, eur_per_hour, rank_pct')
     .order('day_of_week')
