@@ -1,6 +1,6 @@
 // =============================================================================
-// src/components/EtaSniperCard.tsx  v3
-// GPS sisaanrakennettu, 10 km sadesuodatus, sijaintipalkki
+// src/components/EtaSniperCard.tsx  v4
+// Koko PKS-alue, GPS-tilapalkki, ei radius-rajoitusta
 // =============================================================================
 
 import React from 'react'
@@ -70,45 +70,64 @@ function WeatherBar({ mult }: { mult: number }) {
   )
 }
 
-function GpsBar({ source, lat, lon, error, loading, onRequest }: {
+function GpsStatusBar({ source, lat, lon, error, loading, onRequest }: {
   source: string; lat: number | null; lon: number | null
   error: string | null; loading: boolean; onRequest: () => void
 }) {
   if (loading) return (
-    <div className="text-xs text-gray-500 px-1 mb-2">GPS haetaan...</div>
+    <div className="text-xs text-gray-500 px-1 mb-2 flex items-center gap-1">
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+      GPS haetaan...
+    </div>
   )
   if (error) return (
-    <div className="text-xs text-amber-600 px-1 mb-2 flex items-center gap-2">
-      <span>GPS puuttuu</span>
-      <button onClick={onRequest} className="text-blue-400 underline uppercase">Anna lupa</button>
+    <div className="text-xs px-1 mb-2 flex items-center gap-2 flex-wrap">
+      <span className="text-amber-500">{error}</span>
+      <button
+        onClick={onRequest}
+        className="text-blue-400 underline uppercase tracking-wide font-bold"
+      >
+        Yrita uudelleen
+      </button>
     </div>
   )
   if (source === 'gps' && lat && lon) return (
-    <div className="text-xs text-green-600 px-1 mb-2">
-      GPS {lat.toFixed(3)}, {lon.toFixed(3)}
+    <div className="text-xs text-green-600 px-1 mb-2 flex items-center gap-1">
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500" />
+      GPS aktiivinen — {lat.toFixed(4)}, {lon.toFixed(4)}
     </div>
   )
   if (source === 'manual' && lat && lon) return (
-    <div className="text-xs text-amber-500 px-1 mb-2">
-      Manuaalisijainti {lat.toFixed(3)}, {lon.toFixed(3)}
+    <div className="text-xs text-amber-500 px-1 mb-2 flex items-center gap-1">
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
+      Manuaalisijainti — {lat.toFixed(4)}, {lon.toFixed(4)}
     </div>
   )
-  return null
+  // source === 'none' ja ei ladatessa -- nayta nappi
+  return (
+    <div className="text-xs px-1 mb-2 flex items-center gap-2">
+      <span className="text-gray-500">Sijainti tuntematon</span>
+      <button
+        onClick={onRequest}
+        className="text-blue-400 underline uppercase tracking-wide font-bold"
+      >
+        Hae GPS
+      </button>
+    </div>
+  )
 }
 
 export interface EtaSniperCardProps {
   className?: string
-  radiusKm?: number
 }
 
-export function EtaSniperCard({ className = '', radiusKm = 10 }: EtaSniperCardProps) {
+export function EtaSniperCard({ className = '' }: EtaSniperCardProps) {
   const geo = useGeolocation()
 
   const { data, isLoading, isError, error, dataUpdatedAt, refetch, isFetching } =
     useEtaSniper({
       currentLat: geo.lat ?? undefined,
       currentLon: geo.lon ?? undefined,
-      radiusKm,
     })
 
   const lastUpdate = dataUpdatedAt
@@ -124,7 +143,7 @@ export function EtaSniperCard({ className = '', radiusKm = 10 }: EtaSniperCardPr
         <div className="flex items-center gap-2">
           <span className={`inline-block w-1.5 h-1.5 rounded-full ${isFetching ? 'bg-amber-400 animate-pulse' : 'bg-green-500'}`} />
           <span className="text-xs font-black tracking-widest text-white uppercase">ETA-SNIPER</span>
-          <span className="text-xs text-gray-600 uppercase">{radiusKm} km</span>
+          <span className="text-xs text-gray-600 uppercase">PKS</span>
         </div>
         <div className="flex items-center gap-3">
           {lastUpdate && <span className="text-xs text-gray-600">pv.&nbsp;{lastUpdate}</span>}
@@ -139,8 +158,10 @@ export function EtaSniperCard({ className = '', radiusKm = 10 }: EtaSniperCardPr
       </div>
 
       <div className="px-3 pt-2 pb-1">
-        <GpsBar source={geo.source} lat={geo.lat} lon={geo.lon}
-          error={geo.error} loading={geo.loading} onRequest={geo.requestGps} />
+        <GpsStatusBar
+          source={geo.source} lat={geo.lat} lon={geo.lon}
+          error={geo.error} loading={geo.loading} onRequest={geo.requestGps}
+        />
 
         {isLoading && (
           <div className="text-center py-6 text-gray-500 text-xs tracking-widest uppercase">
@@ -170,7 +191,7 @@ export function EtaSniperCard({ className = '', radiusKm = 10 }: EtaSniperCardPr
 
         {data?.data && data.data.length === 0 && (
           <div className="text-center py-5 text-gray-600 text-xs tracking-widest uppercase">
-            Ei kohteita {radiusKm} km sateella
+            Ei historiadataa valitulle ajankohdalle
           </div>
         )}
       </div>
