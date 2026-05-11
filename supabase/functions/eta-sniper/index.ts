@@ -106,24 +106,23 @@ Deno.serve(async (req) => {
       }
     } catch (_) {}
 
-    // Historiadata (taxi_trips) — sama tunti, weekend/weekday match, viimeiset 90 pv
+    // Historiadata (taxi_trips) — sama tunti +/- 1, weekend/weekday match, koko historia
     const isWeekend = dow >= 6
-    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+    const hourWindow = [(hour + 23) % 24, hour, (hour + 1) % 24]
     let trips: Array<{ start_lat: number | null; start_lon: number | null; fare_eur: number | null; duration_min: number | null }> = []
     try {
       const { data } = await supabase
         .from('taxi_trips')
         .select('start_lat, start_lon, fare_eur, duration_min')
-        .eq('hour_of_day', hour)
+        .in('hour_of_day', hourWindow)
         .eq('is_weekend', isWeekend)
-        .gte('start_time', since)
         .not('start_lat', 'is', null)
-        .limit(2000)
+        .limit(5000)
       trips = data ?? []
     } catch (_) {}
 
     const FUEL_COST = 2.5
-    const RADIUS_KM = 0.6
+    const RADIUS_KM = 1.0
 
     const targets = TOLPAT.map((tl) => {
       const tMin = travel_minutes !== undefined
