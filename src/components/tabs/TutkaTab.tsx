@@ -16,7 +16,7 @@ const TutkaTab = () => {
           </h2>
           <SuggestionButton feature="Tutka / ETA-Sniper" context="Kohde-ehdotukset, matka-aika, tuntiansio" />
         </div>
-        <EtaSniperCard className="mb-1" />
+        <EtaSniperCard radiusKm={10} className="mb-1" />
       </section>
 
       <section aria-label="Suositusalue">
