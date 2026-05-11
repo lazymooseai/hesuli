@@ -33,6 +33,9 @@ export interface TrainDelay {
    * kaukojunatyypit pois hylkayksen sijaan).
    */
   trainCategory?: TrainCategory;
+  cancelled?: boolean;
+  capacity?: number;
+  capacitySource?: string;
 }
 
 export interface ShipArrival {
