@@ -6,6 +6,7 @@
 import React from 'react'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useEtaSniper } from '@/hooks/useEtaSniper'
+import { ALL_ZONES, type Zone } from '@/lib/tolppaLocations'
 import {
   getVerdictBgClass,
   getVerdictBadgeClass,
