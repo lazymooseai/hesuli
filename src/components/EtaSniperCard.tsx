@@ -196,6 +196,7 @@ export function EtaSniperCard({ className = '' }: EtaSniperCardProps) {
         <GpsStatusBar
           source={geo.source} lat={geo.lat} lon={geo.lon}
           error={geo.error} loading={geo.loading} onRequest={geo.requestGps}
+          onPickZone={geo.setManualZone}
         />
 
         {isLoading && (
