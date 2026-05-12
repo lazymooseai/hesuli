@@ -115,11 +115,12 @@ export function useGeolocation() {
         });
       },
       (_err) => {
-        // Watch-virhe -- ei nayteta uutta virhetta jos koordinaatit jo saatu
+        // Watch-virhe — ala ylikirjoita olemassa olevaa virhetta tai onnistunutta sijaintia
         setState((s) => {
-          if (s.lat !== null) return s; // koordinaatit jo OK
+          if (s.lat !== null) return s;
+          if (s.error) return { ...s, loading: false };
           return { ...s, loading: false,
-                   error: "GPS-paivitys keskeytyi" };
+                   error: "GPS-paivitys keskeytyi — valitse alue alta" };
         });
       },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
