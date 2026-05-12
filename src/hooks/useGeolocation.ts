@@ -64,6 +64,8 @@ export function useGeolocation() {
 
     setState((s) => ({ ...s, loading: true, error: null }));
 
+    const inIframe = typeof window !== "undefined" && window.self !== window.top;
+
     // Kokeile ensin getCurrentPosition nopeaan vastaukseen
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -79,14 +81,15 @@ export function useGeolocation() {
         });
       },
       (err) => {
-        // getCurrentPosition epaonnistui -- nayta virheilmoitus
         let msg = "GPS-haku epaonnistui";
         if (err.code === err.PERMISSION_DENIED) {
-          msg = "GPS-lupa evatty -- anna lupa selaimen asetuksista";
+          msg = inIframe
+            ? "GPS estetty esikatselussa — avaa sovellus omassa valilehdessa tai valitse alue alta"
+            : "GPS-lupa evatty — anna lupa selaimen asetuksista";
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          msg = "Sijainti ei saatavilla";
+          msg = "Sijainti ei saatavilla — valitse alue alta";
         } else if (err.code === err.TIMEOUT) {
-          msg = "GPS-haku aikakatkaistiin";
+          msg = "GPS-haku aikakatkaistiin — valitse alue alta";
         }
         setState((s) => ({ ...s, loading: false, error: msg }));
       },
@@ -112,11 +115,12 @@ export function useGeolocation() {
         });
       },
       (_err) => {
-        // Watch-virhe -- ei nayteta uutta virhetta jos koordinaatit jo saatu
+        // Watch-virhe — ala ylikirjoita olemassa olevaa virhetta tai onnistunutta sijaintia
         setState((s) => {
-          if (s.lat !== null) return s; // koordinaatit jo OK
+          if (s.lat !== null) return s;
+          if (s.error) return { ...s, loading: false };
           return { ...s, loading: false,
-                   error: "GPS-paivitys keskeytyi" };
+                   error: "GPS-paivitys keskeytyi — valitse alue alta" };
         });
       },
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },

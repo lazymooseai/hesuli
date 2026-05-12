@@ -6,6 +6,7 @@
 import React from 'react'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useEtaSniper } from '@/hooks/useEtaSniper'
+import { ALL_ZONES, type Zone } from '@/lib/tolppaLocations'
 import {
   getVerdictBgClass,
   getVerdictBadgeClass,
@@ -70,9 +71,26 @@ function WeatherBar({ mult }: { mult: number }) {
   )
 }
 
-function GpsStatusBar({ source, lat, lon, error, loading, onRequest }: {
+function ZonePicker({ onPick }: { onPick: (z: Zone) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {ALL_ZONES.map((z) => (
+        <button
+          key={z}
+          onClick={() => onPick(z)}
+          className="text-[10px] px-2 py-1 rounded-sm bg-gray-800 hover:bg-gray-700 text-gray-200 uppercase tracking-wide font-bold border border-gray-700"
+        >
+          {z}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function GpsStatusBar({ source, lat, lon, error, loading, onRequest, onPickZone }: {
   source: string; lat: number | null; lon: number | null
   error: string | null; loading: boolean; onRequest: () => void
+  onPickZone: (z: Zone) => void
 }) {
   if (loading) return (
     <div className="text-xs text-gray-500 px-1 mb-2 flex items-center gap-1">
@@ -81,14 +99,18 @@ function GpsStatusBar({ source, lat, lon, error, loading, onRequest }: {
     </div>
   )
   if (error) return (
-    <div className="text-xs px-1 mb-2 flex items-center gap-2 flex-wrap">
-      <span className="text-amber-500">{error}</span>
-      <button
-        onClick={onRequest}
-        className="text-blue-400 underline uppercase tracking-wide font-bold"
-      >
-        Yrita uudelleen
-      </button>
+    <div className="text-xs px-1 mb-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-amber-500">{error}</span>
+        <button
+          onClick={onRequest}
+          className="text-blue-400 underline uppercase tracking-wide font-bold"
+        >
+          Yrita uudelleen
+        </button>
+      </div>
+      <div className="text-gray-500 mt-1">Tai valitse alue manuaalisesti:</div>
+      <ZonePicker onPick={onPickZone} />
     </div>
   )
   if (source === 'gps' && lat && lon) return (
@@ -98,27 +120,40 @@ function GpsStatusBar({ source, lat, lon, error, loading, onRequest }: {
     </div>
   )
   if (source === 'manual' && lat && lon) return (
-    <div className="text-xs text-amber-500 px-1 mb-2 flex items-center gap-1">
-      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
-      Manuaalisijainti — {lat.toFixed(4)}, {lon.toFixed(4)}
+    <div className="text-xs px-1 mb-2">
+      <div className="text-amber-500 flex items-center gap-2 flex-wrap">
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400" />
+        Manuaalisijainti — {lat.toFixed(4)}, {lon.toFixed(4)}
+        <button
+          onClick={onRequest}
+          className="text-blue-400 underline uppercase tracking-wide font-bold"
+        >
+          Hae GPS
+        </button>
+      </div>
+      <ZonePicker onPick={onPickZone} />
     </div>
   )
-  // source === 'none' ja ei ladatessa -- nayta nappi
   return (
-    <div className="text-xs px-1 mb-2 flex items-center gap-2">
-      <span className="text-gray-500">Sijainti tuntematon</span>
-      <button
-        onClick={onRequest}
-        className="text-blue-400 underline uppercase tracking-wide font-bold"
-      >
-        Hae GPS
-      </button>
+    <div className="text-xs px-1 mb-2">
+      <div className="flex items-center gap-2">
+        <span className="text-gray-500">Sijainti tuntematon</span>
+        <button
+          onClick={onRequest}
+          className="text-blue-400 underline uppercase tracking-wide font-bold"
+        >
+          Hae GPS
+        </button>
+      </div>
+      <div className="text-gray-500 mt-1">Tai valitse alue:</div>
+      <ZonePicker onPick={onPickZone} />
     </div>
   )
 }
 
 export interface EtaSniperCardProps {
   className?: string
+  radiusKm?: number
 }
 
 export function EtaSniperCard({ className = '' }: EtaSniperCardProps) {
@@ -161,6 +196,7 @@ export function EtaSniperCard({ className = '' }: EtaSniperCardProps) {
         <GpsStatusBar
           source={geo.source} lat={geo.lat} lon={geo.lon}
           error={geo.error} loading={geo.loading} onRequest={geo.requestGps}
+          onPickZone={geo.setManualZone}
         />
 
         {isLoading && (
