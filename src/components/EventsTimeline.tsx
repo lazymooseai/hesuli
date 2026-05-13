@@ -152,6 +152,8 @@ const ITEM_ICON: Record<TimelineItem["raw"]["kind"], React.ReactNode> = {
 };
 
 const HARD_LIMIT_PER_TAB = 5;
+const EVENT_ACTIVE_GRACE_MS = 10 * 60 * 1000;
+const DEFAULT_EVENT_DURATION_MS = 2.5 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Apufunktiot
@@ -178,11 +180,29 @@ function isItemToday(item: TimelineItem): boolean {
   return true;
 }
 
-function isTodayUntilMidnight(item: TimelineItem): boolean {
-  if (!isItemToday(item) || !isEventLike(item)) return false;
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  return item.startMs > -24 * 60 * 60_000 && Date.now() <= end.getTime();
+function eventActiveUntilMs(item: TimelineItem): number | null {
+  if (!isEventLike(item)) return null;
+  if (item.endIso) {
+    const end = new Date(item.endIso).getTime();
+    if (Number.isFinite(end)) return end + EVENT_ACTIVE_GRACE_MS;
+  }
+  if (item.startIso) {
+    const start = new Date(item.startIso).getTime();
+    if (Number.isFinite(start)) return start + DEFAULT_EVENT_DURATION_MS + EVENT_ACTIVE_GRACE_MS;
+  }
+  return Date.now() + item.startMs + DEFAULT_EVENT_DURATION_MS + EVENT_ACTIVE_GRACE_MS;
+}
+
+function isEventStillActive(item: TimelineItem): boolean {
+  if (!isItemToday(item)) return false;
+  const activeUntil = eventActiveUntilMs(item);
+  return activeUntil != null && Date.now() <= activeUntil;
+}
+
+function isTimelineItemPast(item: TimelineItem): boolean {
+  const activeUntil = eventActiveUntilMs(item);
+  if (activeUntil != null) return Date.now() > activeUntil;
+  return item.startMs < -5 * 60 * 1000;
 }
 
 function formatRelative(startMs: number): string {
