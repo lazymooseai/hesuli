@@ -54,6 +54,8 @@ export interface TimelineItem {
   loadPct?: number;
   /** Loppumisaika HH:MM (jos tiedossa) — naytetaan "alku–loppu" muodossa */
   endTime?: string;
+  /** Loppumisaika ISO-muodossa aktiivisuuden laskentaan. */
+  endIso?: string;
   /** Ulkoinen URL johon kortin klikkaus johtaa (uusi valilehti) */
   url?: string;
   /** Lähin/sopivin taksitolppa tapahtumalle (jos pystyttiin päättelemään). */
@@ -376,6 +378,7 @@ export function eventToTimelineItem(e: EventInfo): TimelineItem {
     capacity: e.capacity,
     loadPct,
     endTime: e.endTime,
+    endIso: e.endIso,
     tolppa: tolppaMatch?.tolppa,
     url:
       e.infoUrl ||
@@ -478,6 +481,7 @@ export function sportsToTimelineItem(s: SportsEvent): TimelineItem {
     tolppa: tolppaMatch?.tolppa,
     startIso: s.startIso,
     endTime: s.endIso ? new Date(s.endIso).toTimeString().slice(0, 5) : undefined,
+    endIso: s.endIso,
     url: `https://www.google.com/search?q=${encodeURIComponent(`${s.homeTeam} ${s.awayTeam} liput`)}`,
     raw: { kind: "sports", data: s },
   };
@@ -545,6 +549,7 @@ export function politicalToTimelineItem(p: PoliticalEvent): TimelineItem {
     tag,
     audienceTag,
     endTime,
+    endIso,
     tolppa: tolppaMatch?.tolppa,
     url:
       p.sourceUrl ||
