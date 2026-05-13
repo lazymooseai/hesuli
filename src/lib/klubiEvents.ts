@@ -46,6 +46,7 @@ export async function fetchKlubiEvents(): Promise<EventInfo[]> {
         demandLevel: level,
         startTime: e.time,
         startIso: e.startIso,
+        endIso: new Date(new Date(e.startIso).getTime() + 2.5 * 60 * 60 * 1000).toISOString(),
         availabilityNote: e.summary || (e.price ? `Hinta ${e.price}` : undefined),
         infoUrl: e.url,
       };
