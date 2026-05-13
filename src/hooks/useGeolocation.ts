@@ -6,8 +6,8 @@
  * vaikka kayttaja antaisi luvan, koska iframe-konteksti ei saa
  * jatkuvaa sijaintilupaa ilman allow="geolocation"-attributtia.
  *
- * Iframe-tunnistus: jos window.self !== window.top, nayta
- * kayttajaystavallinen viesti manuaalivalinnalla.
+ * Iframe-kontekstia ei estetä ennakkoon: yritetään GPS-hakua aina, koska
+ * käyttäjän napautus voi avata luvan. Fallback näytetään vasta selainvirheestä.
  *
  * sessionStorage-cache: GPS-koordinaatit sailyvat sivunpaivityksen yli
  * jottei kayttajan tarvitse antaa lupaa uudelleen.
@@ -79,12 +79,11 @@ export function useGeolocation() {
   }, []);
 
   const requestGps = useCallback(() => {
-    // Iframe-tarkistus ensin
-    if (isInIframe()) {
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
       setState((s) => ({
         ...s,
         loading: false,
-        error: "GPS estetty esikatselussa — avaa sovellus omassa valilehdessa tai valitse alue alta",
+        error: "GPS vaatii suojatun HTTPS-yhteyden — valitse alue alta",
       }));
       return;
     }
@@ -117,13 +116,16 @@ export function useGeolocation() {
         });
       },
       (err) => {
-        let msg = "GPS-haku epaonnistui — valitse alue alta";
+        const iframeHint = isInIframe()
+          ? " Avaa sovellus omassa valilehdessa, jos selain estaa sijainnin esikatselussa."
+          : "";
+        let msg = `GPS-haku epaonnistui — valitse alue alta.${iframeHint}`;
         if (err.code === err.PERMISSION_DENIED) {
-          msg = "GPS-lupa evatty — anna lupa: Asetukset > Safari > Sijainti > Salli";
+          msg = `GPS-lupa evatty — salli sijainti selaimen asetuksista.${iframeHint}`;
         } else if (err.code === err.POSITION_UNAVAILABLE) {
-          msg = "Sijainti ei saatavilla — valitse alue alta";
+          msg = `Sijainti ei saatavilla — valitse alue alta.${iframeHint}`;
         } else if (err.code === err.TIMEOUT) {
-          msg = "GPS aikakatkaistiin — valitse alue alta";
+          msg = `GPS aikakatkaistiin — valitse alue alta.${iframeHint}`;
         }
         setState((s) => ({ ...s, loading: false, error: msg }));
       },
@@ -156,25 +158,17 @@ export function useGeolocation() {
                accuracyMeters: null, error: null, loading: false });
   }, [stopInterval]);
 
-  // Kaynnista GPS automaattisesti — mutta vain jos EI olla iframessa
+  // Kaynnista GPS automaattisesti. Jos selain estaa, naytetaan manuaalivalinta.
   useEffect(() => {
     if (state.source === "none") {
-      if (isInIframe()) {
-        // Nayta suoraan manuaalivalinta-viesti iframessa
-        setState((s) => ({
-          ...s, loading: false,
-          error: "GPS estetty esikatselussa — avaa sovellus omassa valilehdessa tai valitse alue alta",
-        }));
-      } else {
-        requestGps();
-      }
+      requestGps();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Kaynnista paivitysintervaali kun GPS on saatu onnistuneesti
   useEffect(() => {
-    if (state.source === "gps" && state.lat !== null && !isInIframe()) {
+    if (state.source === "gps" && state.lat !== null) {
       stopInterval();
       intervalRef.current = setInterval(() => {
         requestGps();
