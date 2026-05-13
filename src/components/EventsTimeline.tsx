@@ -331,7 +331,7 @@ interface TimelineCardProps {
 }
 
 const TimelineCard = ({ item, onClick }: TimelineCardProps) => {
-  const isPast = item.startMs < -5 * 60 * 1000;
+  const isPast = isTimelineItemPast(item);
   const dateBadge = formatDateBadge(item.startIso);
   const timeLabel =
     item.endTime && item.time && item.endTime !== item.time
