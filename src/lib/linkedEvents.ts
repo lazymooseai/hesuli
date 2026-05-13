@@ -367,6 +367,7 @@ export async function fetchLinkedEvents(): Promise<EventInfo[]> {
       startTime: fmtTime(displayStartIso || ev.start_time),
       startIso: displayStartIso || ev.start_time,
       endTime: fmtTime(displayEndIso),
+      endIso: displayEndIso || undefined,
       capacity,
       availabilityNote: pickName(ev.short_description as { fi?: string }) || undefined,
       infoUrl: ev.info_url?.fi || undefined,

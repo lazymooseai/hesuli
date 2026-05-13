@@ -38,12 +38,10 @@ function isToday(iso: string): boolean {
 
 function isCurrentlyActive(startIso: string, endIso?: string | null): boolean {
   const now = Date.now();
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
   const s = new Date(startIso).getTime();
-  const e = endIso ? new Date(endIso).getTime() : todayEnd.getTime();
-  // Näytetään tämän päivän tapahtumat klo 24 asti, ei vain 4h ikkunassa.
-  return now <= Math.max(e, todayEnd.getTime());
+  const e = endIso ? new Date(endIso).getTime() : s + 2.5 * 60 * 60 * 1000;
+  // Näytetään tapahtuma aktiivisena loppuun asti + 10 min purkuikkuna.
+  return now <= e + 10 * 60 * 1000;
 }
 
 function getDemandTagFromLevel(level: string, soldOut: boolean): string {
@@ -88,6 +86,7 @@ function rowToEvent(row: DbEventRow): EventInfo {
     startTime: formatTime(row.start_time),
     startIso: row.start_time,
     endTime: formatTime(row.end_time),
+    endIso: row.end_time ?? undefined,
     capacity: row.capacity ?? undefined,
     estimatedAttendance: attendance,
     loadFactor: row.load_factor != null ? Number(row.load_factor) : undefined,
@@ -165,7 +164,7 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
     seenKeys.add(key);
 
     const startIso = ev.startIso ?? "";
-    if (isToday(startIso) && isCurrentlyActive(startIso)) {
+    if (isToday(startIso) && isCurrentlyActive(startIso, ev.endIso)) {
       today.push(ev);
     } else if (!isToday(startIso) || new Date(startIso).getTime() > Date.now()) {
       upcoming.push(ev);

@@ -58,6 +58,7 @@ export interface EventInfo {
   startTime?: string;     // HH:MM muodossa
   startIso?: string;      // Tay ISO-aika alkamisajalle (paivamaaran nayttoa varten)
   endTime?: string;       // HH:MM muodossa - paattymisaika (purkuaika)
+  endIso?: string;        // Tay ISO-aika paattymiselle, jotta kaynnissa olevat pysyvat aktiivisina
   capacity?: number;      // Venue-kapasiteetti (paikkamaara)
   estimatedAttendance?: number; // Arvio yleisomaarasta
   loadFactor?: number;    // 0..1 - lipunmyyntiaste
