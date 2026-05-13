@@ -619,7 +619,7 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
 
     for (const item of filtered) {
       if (isItemToday(item)) {
-        if (inWindow(item, maxMin) || isTodayUntilMidnight(item)) {
+        if (inWindow(item, maxMin) || isEventStillActive(item)) {
           today[item.category].push(item);
         } else if (item.startMs > maxMin * 60_000) {
           upcoming[item.category].push(item);
