@@ -164,7 +164,7 @@ export async function fetchEventsBundle(): Promise<EventsBundle> {
     seenKeys.add(key);
 
     const startIso = ev.startIso ?? "";
-    if (isToday(startIso) && isCurrentlyActive(startIso)) {
+    if (isToday(startIso) && isCurrentlyActive(startIso, ev.endIso)) {
       today.push(ev);
     } else if (!isToday(startIso) || new Date(startIso).getTime() > Date.now()) {
       upcoming.push(ev);
