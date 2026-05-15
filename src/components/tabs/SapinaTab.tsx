@@ -34,6 +34,10 @@ const SapinaTab = () => {
             Kyyntiheatmap
           </h2>
           <SuggestionButton feature="Säpinä / Kyyntiheatmap" context="Viikonpäivä x tunti -matriisi, EUR/h historiadata" />
+        </div>
+        <TripHeatmap />
+      </section>
+
       <section aria-label="ETA-Sniper">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
