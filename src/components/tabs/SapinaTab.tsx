@@ -2,6 +2,7 @@ import EventsTimeline from "@/components/EventsTimeline";
 import DispatchLiveCard from "@/components/DispatchLiveCard";
 import SuggestionButton from "@/components/SuggestionButton";
 import { TripHeatmap } from "@/components/TripHeatmap";
+import { EtaSniperCard } from "@/components/EtaSniperCard";
 
 const SapinaTab = () => {
   return (
