@@ -2,6 +2,7 @@ import EventsTimeline from "@/components/EventsTimeline";
 import DispatchLiveCard from "@/components/DispatchLiveCard";
 import SuggestionButton from "@/components/SuggestionButton";
 import { TripHeatmap } from "@/components/TripHeatmap";
+import { EtaSniperCard } from "@/components/EtaSniperCard";
 
 const SapinaTab = () => {
   return (
@@ -35,6 +36,16 @@ const SapinaTab = () => {
           <SuggestionButton feature="Säpinä / Kyyntiheatmap" context="Viikonpäivä x tunti -matriisi, EUR/h historiadata" />
         </div>
         <TripHeatmap />
+      </section>
+
+      <section aria-label="ETA-Sniper">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            ETA-Sniper
+          </h2>
+          <SuggestionButton feature="Säpinä / ETA-Sniper" context="Kohde-ehdotukset, matka-aika, tuntiansio" />
+        </div>
+        <EtaSniperCard radiusKm={10} className="mb-1" />
       </section>
 
     </div>
