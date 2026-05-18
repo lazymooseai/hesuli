@@ -674,7 +674,11 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
     };
   }, [allItems, windowH, nearOnly]);
 
-  const activeCategory = CATEGORY_ORDER[tabIdx];
+  const visibleCategories = hideTraffic
+    ? CATEGORY_ORDER.filter((c) => c !== "asemat")
+    : CATEGORY_ORDER;
+
+  const activeCategory = visibleCategories[tabIdx];
   const todayItems = todayGrouped[activeCategory];
   const upcomingItems = upcomingGrouped[activeCategory];
   const isExpanded = expanded[activeCategory];
@@ -696,7 +700,7 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
 
   const swipe = useSwipeable({
     onSwipedLeft: () =>
-      setTabIdx((i) => Math.min(CATEGORY_ORDER.length - 1, i + 1)),
+      setTabIdx((i) => Math.min(visibleCategories.length - 1, i + 1)),
     onSwipedRight: () => setTabIdx((i) => Math.max(0, i - 1)),
     trackMouse: false,
     delta: 40,
