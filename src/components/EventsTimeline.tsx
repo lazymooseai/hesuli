@@ -468,9 +468,11 @@ interface EventsTimelineProps {
   onSelect?: (item: TimelineItem) => void;
   /** Avaa "Lisaa tapahtuma" -modaalin */
   onAddEvent?: () => void;
+  /** Piilota liikenne (lennot, junat, laivat) — näkyvät jo Liikenne-välilehdellä */
+  hideTraffic?: boolean;
 }
 
-const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
+const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimelineProps) => {
   const { state, upcomingEvents, trainStation } = useDashboard();
   const { lat: userLat, lon: userLon, source: locSource } = useGeolocation();
 
