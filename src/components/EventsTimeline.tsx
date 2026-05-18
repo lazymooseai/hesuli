@@ -468,9 +468,11 @@ interface EventsTimelineProps {
   onSelect?: (item: TimelineItem) => void;
   /** Avaa "Lisaa tapahtuma" -modaalin */
   onAddEvent?: () => void;
+  /** Piilota liikenne (lennot, junat, laivat) — näkyvät jo Liikenne-välilehdellä */
+  hideTraffic?: boolean;
 }
 
-const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
+const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimelineProps) => {
   const { state, upcomingEvents, trainStation } = useDashboard();
   const { lat: userLat, lon: userLon, source: locSource } = useGeolocation();
 
@@ -546,13 +548,15 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     const items: TimelineItem[] = [];
 
     // Null-/undefined-suojaukset kaikille arrayleille
-    (state.flights ?? []).forEach((f) => items.push(flightToTimelineItem(f)));
-    (state.trainDelays ?? []).forEach((t) =>
-      items.push(trainToTimelineItem(t, stationName)),
-    );
-    (state.shipArrivals ?? []).forEach((s) =>
-      items.push(shipToTimelineItem(s)),
-    );
+    if (!hideTraffic) {
+      (state.flights ?? []).forEach((f) => items.push(flightToTimelineItem(f)));
+      (state.trainDelays ?? []).forEach((t) =>
+        items.push(trainToTimelineItem(t, stationName)),
+      );
+      (state.shipArrivals ?? []).forEach((s) =>
+        items.push(shipToTimelineItem(s)),
+      );
+    }
     (state.events ?? [])
       .filter((e) => !isLowTaxiDemandEvent(e.name, e.venue))
       .forEach((e) => items.push(eventToTimelineItem(e)));
@@ -590,6 +594,7 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     userLat,
     userLon,
     manualVer,
+    hideTraffic,
   ]);
 
   // -------------------------------------------------------------------------
@@ -669,7 +674,11 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     };
   }, [allItems, windowH, nearOnly]);
 
-  const activeCategory = CATEGORY_ORDER[tabIdx];
+  const visibleCategories = hideTraffic
+    ? CATEGORY_ORDER.filter((c) => c !== "asemat")
+    : CATEGORY_ORDER;
+
+  const activeCategory = visibleCategories[tabIdx];
   const todayItems = todayGrouped[activeCategory];
   const upcomingItems = upcomingGrouped[activeCategory];
   const isExpanded = expanded[activeCategory];
@@ -691,7 +700,7 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
 
   const swipe = useSwipeable({
     onSwipedLeft: () =>
-      setTabIdx((i) => Math.min(CATEGORY_ORDER.length - 1, i + 1)),
+      setTabIdx((i) => Math.min(visibleCategories.length - 1, i + 1)),
     onSwipedRight: () => setTabIdx((i) => Math.max(0, i - 1)),
     trackMouse: false,
     delta: 40,
@@ -703,6 +712,13 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
     setShowUpcoming((prev) => ({ ...prev, [activeCategory]: false }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabIdx, windowH]);
+
+  // Varmista etta tabIdx pysyy sallituissa rajoissa kun kategorioita suodatetaan
+  useEffect(() => {
+    if (tabIdx >= visibleCategories.length) {
+      setTabIdx(Math.max(0, visibleCategories.length - 1));
+    }
+  }, [hideTraffic, visibleCategories.length, tabIdx]);
 
   // -------------------------------------------------------------------------
   // Render
@@ -773,8 +789,8 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <div className="flex-1 grid grid-cols-5 gap-1">
-          {CATEGORY_ORDER.map((cat, i) => {
+        <div className={`flex-1 grid gap-1 ${hideTraffic ? 'grid-cols-4' : 'grid-cols-5'}`}>
+          {visibleCategories.map((cat, i) => {
             const count = totalCounts[cat];
             const isActive = i === tabIdx;
             return (
@@ -808,9 +824,9 @@ const EventsTimelineInner = ({ onSelect, onAddEvent }: EventsTimelineProps) => {
         </div>
         <button
           onClick={() =>
-            setTabIdx((i) => Math.min(CATEGORY_ORDER.length - 1, i + 1))
+            setTabIdx((i) => Math.min(visibleCategories.length - 1, i + 1))
           }
-          disabled={tabIdx === CATEGORY_ORDER.length - 1}
+          disabled={tabIdx === visibleCategories.length - 1}
           className="shrink-0 h-9 w-7 flex items-center justify-center text-muted-foreground disabled:opacity-30"
           aria-label="Seuraava"
         >
