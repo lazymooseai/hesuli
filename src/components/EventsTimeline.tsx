@@ -782,8 +782,8 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <div className="flex-1 grid grid-cols-5 gap-1">
-          {CATEGORY_ORDER.map((cat, i) => {
+        <div className={`flex-1 grid gap-1 ${hideTraffic ? 'grid-cols-4' : 'grid-cols-5'}`}>
+          {visibleCategories.map((cat, i) => {
             const count = totalCounts[cat];
             const isActive = i === tabIdx;
             return (
@@ -817,9 +817,9 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
         </div>
         <button
           onClick={() =>
-            setTabIdx((i) => Math.min(CATEGORY_ORDER.length - 1, i + 1))
+            setTabIdx((i) => Math.min(visibleCategories.length - 1, i + 1))
           }
-          disabled={tabIdx === CATEGORY_ORDER.length - 1}
+          disabled={tabIdx === visibleCategories.length - 1}
           className="shrink-0 h-9 w-7 flex items-center justify-center text-muted-foreground disabled:opacity-30"
           aria-label="Seuraava"
         >
