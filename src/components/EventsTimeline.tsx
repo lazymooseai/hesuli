@@ -548,13 +548,15 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
     const items: TimelineItem[] = [];
 
     // Null-/undefined-suojaukset kaikille arrayleille
-    (state.flights ?? []).forEach((f) => items.push(flightToTimelineItem(f)));
-    (state.trainDelays ?? []).forEach((t) =>
-      items.push(trainToTimelineItem(t, stationName)),
-    );
-    (state.shipArrivals ?? []).forEach((s) =>
-      items.push(shipToTimelineItem(s)),
-    );
+    if (!hideTraffic) {
+      (state.flights ?? []).forEach((f) => items.push(flightToTimelineItem(f)));
+      (state.trainDelays ?? []).forEach((t) =>
+        items.push(trainToTimelineItem(t, stationName)),
+      );
+      (state.shipArrivals ?? []).forEach((s) =>
+        items.push(shipToTimelineItem(s)),
+      );
+    }
     (state.events ?? [])
       .filter((e) => !isLowTaxiDemandEvent(e.name, e.venue))
       .forEach((e) => items.push(eventToTimelineItem(e)));
@@ -592,6 +594,7 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
     userLat,
     userLon,
     manualVer,
+    hideTraffic,
   ]);
 
   // -------------------------------------------------------------------------
