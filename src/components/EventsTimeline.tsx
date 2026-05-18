@@ -713,6 +713,13 @@ const EventsTimelineInner = ({ onSelect, onAddEvent, hideTraffic }: EventsTimeli
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabIdx, windowH]);
 
+  // Varmista etta tabIdx pysyy sallituissa rajoissa kun kategorioita suodatetaan
+  useEffect(() => {
+    if (tabIdx >= visibleCategories.length) {
+      setTabIdx(Math.max(0, visibleCategories.length - 1));
+    }
+  }, [hideTraffic, visibleCategories.length, tabIdx]);
+
   // -------------------------------------------------------------------------
   // Render
   // -------------------------------------------------------------------------
