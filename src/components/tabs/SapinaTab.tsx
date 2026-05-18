@@ -15,7 +15,7 @@ const SapinaTab = () => {
           </h2>
           <SuggestionButton feature="Säpinä / Tapahtumat" context="Esim. puuttuva tapahtuma, väärä tolppa, väärä yleisöarvio" />
         </div>
-        <EventsTimeline />
+        <EventsTimeline hideTraffic />
       </section>
 
       <section aria-label="Kysyntäennuste">
