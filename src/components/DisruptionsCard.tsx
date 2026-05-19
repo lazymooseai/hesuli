@@ -139,7 +139,11 @@ const DisruptionsCard = ({ criticalOnly = false }: { criticalOnly?: boolean }) =
       validUntilMs: 0,
     }));
 
-  const items = [...hslItems, ...bulletinItems, ...trainItems, ...flightItems, ...shipItems];
+  let items = [...hslItems, ...bulletinItems, ...trainItems, ...flightItems, ...shipItems];
+  if (criticalOnly) {
+    items = items.filter((it) => it.level === "red");
+  }
+
 
   if (items.length === 0) {
     return (
