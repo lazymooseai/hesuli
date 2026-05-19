@@ -12,9 +12,10 @@ import { openExternal } from "@/lib/openExternal";
  * (jos ETA siirtynyt). Tarjoaa nopean katsauksen kuljettajalle siitä,
  * mistä saattaa tulla yllättävää kysyntää tai esteitä.
  */
-const DisruptionsCard = () => {
+const DisruptionsCard = ({ criticalOnly = false }: { criticalOnly?: boolean }) => {
   const { state } = useDashboard();
   const { alerts } = useHslAlerts(60_000);
+
   const { bulletins } = useTrainBulletins(120_000);
 
   const fmtClock = (ms: number) => {
@@ -138,7 +139,11 @@ const DisruptionsCard = () => {
       validUntilMs: 0,
     }));
 
-  const items = [...hslItems, ...bulletinItems, ...trainItems, ...flightItems, ...shipItems];
+  let items = [...hslItems, ...bulletinItems, ...trainItems, ...flightItems, ...shipItems];
+  if (criticalOnly) {
+    items = items.filter((it) => it.level === "red");
+  }
+
 
   if (items.length === 0) {
     return (

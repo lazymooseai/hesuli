@@ -38,8 +38,10 @@ const TutkaTab = () => {
           </h2>
           <SuggestionButton feature="Tutka / Häiriötiedote" context="Metro, juna, laivat, lentokenttä" />
         </div>
-        <DisruptionsCard />
+        <DisruptionsCard criticalOnly />
       </section>
+
+
 
     </div>
   );
