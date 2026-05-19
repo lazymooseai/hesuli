@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { DashboardProvider } from "@/context/DashboardContext";
 import DashboardHeader from "@/components/DashboardHeader";
-import HslTicker from "@/components/HslTicker";
 import ScanButton from "@/components/ScanButton";
 import BottomNav, { TabKey } from "@/components/BottomNav";
 import TutkaTab from "@/components/tabs/TutkaTab";
@@ -17,7 +16,6 @@ const Index = () => {
     <DashboardProvider>
       <div className="min-h-screen bg-background flex flex-col overflow-x-hidden">
         <DashboardHeader />
-        <HslTicker />
         <main className="flex-1 pb-32 w-full max-w-screen-md mx-auto">
           {tab === "tutka" && <TutkaTab />}
           {tab === "liikenne" && <LiikenneTab />}

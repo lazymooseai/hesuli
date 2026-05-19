@@ -12,10 +12,40 @@ export interface HslAlert {
 }
 
 const TRANSIT_KEYWORDS = ["metro", "juna", "train", "raitiotie", "tram", "raitiovaunu"];
+const SERVICE_DISRUPTION_KEYWORDS = [
+  "häiriö",
+  "poikkeus",
+  "poikki",
+  "keskeyt",
+  "korvaava",
+  "harvempi",
+  "ei liikennöidä",
+  "peruttu",
+  "myöhässä",
+  "viiväst",
+  "ruuhka",
+];
+const INFRA_NOISE_KEYWORDS = [
+  "liukuport",
+  "hissi",
+  "pysäkki",
+  "pysäkin",
+  "laituri",
+  "sisäänkäynti",
+  "poistetaan käytöstä",
+  "siirtyy",
+  "yö",
+  "öinä",
+];
 
-function isTransitCritical(description: string, header: string): boolean {
+function isTransitCritical(description: string, header: string, severity: string): boolean {
   const text = `${description} ${header}`.toLowerCase();
-  return TRANSIT_KEYWORDS.some((kw) => text.includes(kw));
+  const touchesTransit = TRANSIT_KEYWORDS.some((kw) => text.includes(kw));
+  if (!touchesTransit) return false;
+  if (INFRA_NOISE_KEYWORDS.some((kw) => text.includes(kw))) return false;
+
+  const affectsService = SERVICE_DISRUPTION_KEYWORDS.some((kw) => text.includes(kw));
+  return severity === "SEVERE" && affectsService;
 }
 
 export async function fetchHslAlerts(): Promise<HslAlert[]> {
@@ -25,15 +55,18 @@ export async function fetchHslAlerts(): Promise<HslAlert[]> {
 
     const alerts = data?.alerts ?? [];
 
-    return alerts.map((a: any, i: number) => ({
+    return alerts.map((a: any, i: number) => {
+      const severity = a.alertSeverityLevel || "WARNING";
+      return {
       id: a.id || `hsl-alert-${i}`,
       headerText: a.alertHeaderText || "",
       descriptionText: a.alertDescriptionText || "",
-      severity: a.alertSeverityLevel || "WARNING",
+      severity,
       effectiveStartDate: a.effectiveStartDate || 0,
       effectiveEndDate: a.effectiveEndDate || 0,
-      isTransitCritical: isTransitCritical(a.alertDescriptionText || "", a.alertHeaderText || ""),
-    }));
+      isTransitCritical: isTransitCritical(a.alertDescriptionText || "", a.alertHeaderText || "", severity),
+    };
+    });
   } catch (err) {
     console.warn("HSL alerts fetch failed:", err);
     return [];
