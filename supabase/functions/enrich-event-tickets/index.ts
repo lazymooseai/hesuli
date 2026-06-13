@@ -27,6 +27,10 @@ const corsHeaders = {
 const FIRECRAWL_V2 = 'https://api.firecrawl.dev/v2';
 const MAX_PER_RUN = 8;
 const STALE_HOURS = 6;
+// ADAPTIIVINEN SEURANTA: tapahtumat jotka alkavat pian tarkistetaan
+// tiheammin. Lipunmyynti elaa eniten viime tunteina.
+const HOT_WINDOW_HOURS = 6;    // Tapahtuma alkaa < 6h -> "kuuma"
+const HOT_STALE_HOURS = 1;     // Kuumat: tarkista tunnin valein
 
 interface EventRow {
   id: string;
@@ -164,29 +168,61 @@ Deno.serve(async (req) => {
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-  // Hae kandidatit: tulevat tapahtumat, joilla source_url, joko ei load_factoria
-  // tai stale (>6h sitten paivitetty)
+  // ADAPTIIVINEN KANDIDAATTIHAKU (kaksi vaihetta):
+  //   1. KUUMAT: alkavat < HOT_WINDOW_HOURS -> stale jo HOT_STALE_HOURS jalkeen
+  //   2. MUUT:   tulevat 4 vrk sisalla -> stale STALE_HOURS jalkeen
+  // Kuumat priorisoidaan: ne taytetaan MAX_PER_RUN-kiintioon ensin.
+  const nowIso = new Date().toISOString();
+  const hotCutoff = new Date(Date.now() + HOT_WINDOW_HOURS * 3600 * 1000).toISOString();
+  const hotStale = new Date(Date.now() - HOT_STALE_HOURS * 3600 * 1000).toISOString();
   const staleCutoff = new Date(Date.now() - STALE_HOURS * 3600 * 1000).toISOString();
-  const { data: candidates, error } = await supabase
+
+  const { data: hotCandidates, error: hotError } = await supabase
     .from('events')
     .select('id, name, venue, source_url, load_factor, last_scraped_at, capacity')
-    .gte('start_time', new Date().toISOString())
-    .lte('start_time', new Date(Date.now() + 4 * 24 * 3600 * 1000).toISOString())
+    .gte('start_time', nowIso)
+    .lte('start_time', hotCutoff)
     .not('source_url', 'is', null)
-    .or(`load_factor.is.null,last_scraped_at.lt.${staleCutoff}`)
+    .or(`load_factor.is.null,last_scraped_at.lt.${hotStale}`)
     .order('start_time', { ascending: true })
     .limit(MAX_PER_RUN);
 
-  if (error) {
-    console.error('[enrich] DB error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  if (hotError) {
+    console.error('[enrich] DB error (hot):', hotError);
   }
 
-  const events = (candidates ?? []) as EventRow[];
-  console.log(`[enrich] Processing ${events.length} events`);
+  const hot = (hotCandidates ?? []) as EventRow[];
+  const remaining = Math.max(0, MAX_PER_RUN - hot.length);
+  let rest: EventRow[] = [];
+
+  if (remaining > 0) {
+    const { data: candidates, error } = await supabase
+      .from('events')
+      .select('id, name, venue, source_url, load_factor, last_scraped_at, capacity')
+      .gt('start_time', hotCutoff)
+      .lte('start_time', new Date(Date.now() + 4 * 24 * 3600 * 1000).toISOString())
+      .not('source_url', 'is', null)
+      .or(`load_factor.is.null,last_scraped_at.lt.${staleCutoff}`)
+      .order('start_time', { ascending: true })
+      .limit(remaining);
+
+    if (error) {
+      console.error('[enrich] DB error:', error);
+      if (hot.length === 0) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+    rest = (candidates ?? []) as EventRow[];
+  }
+
+  const events: EventRow[] = [...hot, ...rest];
+  console.log(
+    `[enrich] Processing ${events.length} events ` +
+    `(${hot.length} hot < ${HOT_WINDOW_HOURS}h, ${rest.length} normal)`,
+  );
 
   const results: Array<{ id: string; name: string; ok: boolean; note?: string }> = [];
 
