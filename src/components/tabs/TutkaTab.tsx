@@ -3,6 +3,7 @@ import JackpotAlert from "@/components/JackpotAlert";
 import NextArrivalsCarousel from "@/components/NextArrivalsCarousel";
 import SuggestionButton from "@/components/SuggestionButton";
 import DisruptionsCard from "@/components/DisruptionsCard";
+import FillRatesCard from "@/components/FillRatesCard";
 
 const TutkaTab = () => {
   return (
@@ -31,6 +32,19 @@ const TutkaTab = () => {
         <NextArrivalsCarousel />
       </section>
 
+      <section aria-label="Tayttoasteet">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+            Tayttoasteet
+          </h2>
+          <SuggestionButton
+            feature="Tutka / Tayttoasteet"
+            context="Lipunmyynti + laivojen matkustajamaarat"
+          />
+        </div>
+        <FillRatesCard />
+      </section>
+
       <section aria-label="Häiriötiedote">
         <div className="flex items-center justify-between mb-2 px-1">
           <h2 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
@@ -40,8 +54,6 @@ const TutkaTab = () => {
         </div>
         <DisruptionsCard criticalOnly />
       </section>
-
-
 
     </div>
   );
